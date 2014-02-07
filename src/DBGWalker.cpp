@@ -1,6 +1,7 @@
 /*****************************************************************************
- *   GATB : Genome Assembly Tool Box
- *   Copyright (C) 2014  R.Chikhi, G.Rizk, E.Drezen
+ *   TakeABreak: Breakpoint detection from raw unassembled NGS reads
+ *   A tool from the GATB (Genome Assembly Tool Box)
+ *   Copyright (C) 2014  C.Lemaitre, P.Peterlongo, E.Drezen
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
@@ -14,7 +15,9 @@
  *
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*****************************************************************************/
+ *****************************************************************************/
+
+
 
 //
 //  BBGWalker.cpp

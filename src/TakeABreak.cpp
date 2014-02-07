@@ -1,6 +1,7 @@
 /*****************************************************************************
- *   GATB : Genome Assembly Tool Box
- *   Copyright (C) 2014  R.Chikhi, G.Rizk, E.Drezen
+ *   TakeABreak: Breakpoint detection from raw unassembled NGS reads
+ *   A tool from the GATB (Genome Assembly Tool Box)
+ *   Copyright (C) 2014  C.Lemaitre, P.Peterlongo, E.Drezen
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
@@ -23,7 +24,7 @@
 #include <LCS.hpp>
 
 
-#define check_memory // http://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
+//#define check_memory // http://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
 #ifdef check_memory
 #include<mach/mach.h>
 struct task_basic_info t_info;
@@ -650,7 +651,7 @@ using namespace std;
 
 
 char * getVersion(){
-	return (char *)"1.0.0 TODO Machin Licence";
+	return (char *)"1.0.0 Licence In progress";
 }
 //#define VERBOSE
 
