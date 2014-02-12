@@ -23,7 +23,7 @@
 #include <LCS.hpp>
 
 
-#define check_memory // http://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
+//#define check_memory // http://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
 #ifdef check_memory
 #include<mach/mach.h>
 struct task_basic_info t_info;
