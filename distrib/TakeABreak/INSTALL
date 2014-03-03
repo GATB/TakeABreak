@@ -1,9 +1,14 @@
+# Prepare directories:
+mkdir bin build
 # Go in the 'build' directory
 cd build
 # Prepare the makefile
 cmake ..
 # Run the new create makefile:
 make
+# Copy the created binaries in ../bin:
+cp ext/gatb-core/bin/dbgh5 ../bin/
+cp TakeABreak ../bin/
 # Go back at the installation root directory
 cd ..
 # The directory bin contains 
