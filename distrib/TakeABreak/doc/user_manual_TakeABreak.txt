@@ -1,20 +1,25 @@
                                           *********************************************
-										  **************** TakeABreak *****************
-										  **************** User's manual **************
-										  *********************************************
+					  **************** TakeABreak *****************
+					  **************** User's manual **************
+					  *********************************************
 								
-								Claire Lemaitre, Liviu Ciortuz, Pierre Peterlongo.		  		  
-								February 2014
-								Web site: http://colibread.inria.fr/takeabreak/
-								Contact: claire.lemaitre@inria.fr
+					  Claire Lemaitre, Liviu Ciortuz, Pierre Peterlongo.		  		  
+					  February 2014
+					  Web site: http://colibread.inria.fr/takeabreak/
+					  Contact: claire.lemaitre@inria.fr
+
+
 								
 LICENSE
-	In progress
-		
+	*  GNU AFFERO GENERAL PUBLIC LICENSE
+	*  Copyright (C) 2014 INRIA
+	see the LICENSE file
+	
 INSTALL
-	Waiting for a full licensing process. Currently two pre-compiled versions exist: 
-		* mac OS 64 bits
-		* unix/linux OS 64 bits 
+	see the INSTALL file
+	compilation was tested with gcc and g++ version>=4.5 and clang version>=4.1
+	
+MANUAL	 
 								
 1/ Description
 	TakeABreak detects inversion breakpoints directly from raw NGS reads, without the need of any reference genome and without de novo assembling the genomes. Its implementation has a very limited memory footprint (less than 6GB for analyzing a full human NGS dataset) and acceptable runtime.
