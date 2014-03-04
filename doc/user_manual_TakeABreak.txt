@@ -1,0 +1,62 @@
+                                          *********************************************
+										  **************** TakeABreak *****************
+										  **************** User's manual **************
+										  *********************************************
+								
+								Claire Lemaitre, Liviu Ciortuz, Pierre Peterlongo.		  		  
+								February 2014
+								Web site: http://colibread.inria.fr/takeabreak/
+								Contact: claire.lemaitre@inria.fr
+								
+LICENSE
+	In progress
+		
+INSTALL
+	Waiting for a full licensing process. Currently two pre-compiled versions exist: 
+		* mac OS 64 bits
+		* unix/linux OS 64 bits 
+								
+1/ Description
+	TakeABreak detects inversion breakpoints directly from raw NGS reads, without the need of any reference genome and without de novo assembling the genomes. Its implementation has a very limited memory footprint (less than 6GB for analyzing a full human NGS dataset) and acceptable runtime.
+		
+2/ Usage
+	TakeABreak is a bash script that consists of two main steps. The first one creates a de Bruijn graph from one or several sets of fasta or fastq files (gzipped or not). The second one searches for inversion signatures into this so-created graph. 
+	
+	A/ de Bruijn graph creation options.
+		In addition to input read set(s), the de Bruijn graph creation uses two additional parameters: 
+			* the length of the k-mers (option -k of TakeABreak.sh, default 31)
+			* the solidity threshold: k-mers having less than this number of occurrences are discarded from the graph (option -S of TakeABreak.sh, default 3)
+	
+	B/ Breakpoint detection options.
+		The breakpoint detection module takes as input the previously created de Bruijn graph (.h5 file). In addition its options are:
+			* the local complexity threshold (see publication). (option -c of TakeABreak.sh, default 100)
+			* the max similarity percentage: Inversions with a and b' (or u and v') whose longest common subsequence size is bigger than k*(this value)/100 are discarded. (option -m of TakeABreak.sh, default 80)
+			* [optimization parameter lower=longer, higher=false negatives] max repeated size suffix of u and reverse complement of v: (option -r of TakeABreak.sh, default 8)
+	
+	C/ Full TakeABreak.sh input data
+		If read set(s) is/are provided (option -r) TakeABreak.sh scripts pipelines the de Bruijn graph creation plus the breakpoint detection phase. In this case user can provide previously described de Bruijn graph creation options plus the breakpoint detection options. 
+		If only a graph file is provided (option -g) TakeABreak.sh only computes the breakpoint detections based on this graph. Only breakpoint detection option can thus be provided.
+		
+	D/ TakeABreak.sh Output
+		The TakeABreak.sh Output are 
+			* a graph file (.h5) 
+			* a fasta file (.fasta) containing the canonical representations of the detected inversion breakpoints. Each inversion corresponds to 4 entries in the fasta file : the first two correspond to breakpoint sequences (a-u,v-b) (canonical representation) that should be present in one genome and the last two are the corresponding breakpoint sequences in the other genome (a-revcomp(v),revcomp(u)-b).
+			* a log file (.log)
+		All the output results are prefixed either by a default name: "TakeABreak_Expe-[date:YY:MM:DD-HH:mm]" or by a user defined prefix (option -p of TakeABreak.sh)
+		
+ 
+3/ Full example
+This toy example can be run with the provided data.
+	A/ Example from raw input reads:
+		./TakeABreak.sh -r data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta -p MyFirstTakeABreakExperiment
+	NOTE: the input read sets are simply separated by comma without spaces.
+	This command line first computes the de Bruijn graph in file (MyFirstTakeABreakExperiment.h5) before searching for the 6 artificial inversions contained in the input reads and finally it outputs them in MyFirstTakeABreakExperiment.fasta. The log file MyFirstTakeABreakExperiment.log contains information about execution times, graph complexity and some numerical information about results.
+	
+	B/ Example from already created de Bruijn graph (MyFirstTakeABreakExperiment.h5)
+		./TakeABreak.sh -g MyFirstTakeABreakExperiment.h5 -p MySecondTakeABreakExperiment
+	This command line uses the already computed the de Bruijn graph (MyFirstTakeABreakExperiment.h5) to detect the 6 artificial inversions contained in the input reads and outputs them in MySecondTakeABreakExperiment.fasta. The log file MySecondTakeABreakExperiment.log contains information about execution times, graph complexity and some numerical information about results.
+		
+	
+4/ Publication
+Paper "Mapping-free and assembly-free discovery of inversion breakpoints from raw NGS reads" By Claire Lemaitre, Liviu Ciortuz and Pierre Peterlongo is currently under review.
+ 
