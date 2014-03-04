@@ -25,19 +25,17 @@ cmake_minimum_required (VERSION 2.6)
 ################################################################################
 # Define cmake modules directory
 ################################################################################
-LIST (APPEND CMAKE_PATH_LOOKUP "cmake;../../cmake")
-
-FOREACH (path ${CMAKE_PATH_LOOKUP})
+FOREACH (path "cmake" "../../cmake")
     IF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${path}")
         SET (CMAKE_MODULE_PATH  "${CMAKE_MODULE_PATH}" "${CMAKE_CURRENT_SOURCE_DIR}/${path}")
     ENDIF()
 ENDFOREACH(path)
 
 ################################################################################
-# GATB-CORE CONFIGURATION
+# THIRD PARTIES
 ################################################################################
 
-# We include all the required material for gatb-core
+# GATB CORE
 include (GatbCore)
 
 ################################################################################
