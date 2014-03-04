@@ -1,0 +1,21 @@
+# Prepare directories:
+mkdir bin build
+# Go in the 'build' directory
+cd build
+# Prepare the makefile
+cmake ..
+# Run the new create makefile:
+make
+# Copy the created binaries in ../bin:
+cp ext/gatb-core/bin/dbgh5 ../bin/
+cp TakeABreak ../bin/
+# Go back at the installation root directory
+cd ..
+# The directory bin contains 
+#  dbgh5 for constructing a de Bruijn graph from any number of read set(s) and
+#  TakeABreak that find the Inversion BreakPoints from the graph.
+# The TakeABreak.sh pipelines the two tools. Type for instance:
+./TakeABreak.sh -r data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta
+
+# More details are in doc/user_manual_TakeABreak.txt 
+ 
