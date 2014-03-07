@@ -88,5 +88,5 @@ INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/TakeABreak.sh DESTINATION .)
 SET (CPACK_SOURCE_IGNORE_FILES  ${CPACK_SOURCE_IGNORE_FILES} "/build/"  "/distrib/"   "/tests/"  ".gitignore$")
 
 # To be done at the end. 
-INCLUDE (CPack)
+INCLUDE (Delivery)
 
