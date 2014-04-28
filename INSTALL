@@ -16,6 +16,7 @@ cd ..
 #  TakeABreak that find the Inversion BreakPoints from the graph.
 # The TakeABreak.sh pipelines the two tools. Type for instance:
 sh ./TakeABreak.sh -r data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta
+#Try bash instead of sh above if sh does not work
 
 # More details are in doc/user_manual_TakeABreak.txt 
  

@@ -49,12 +49,13 @@ public:
     Graph _graph;
     int size_tolerance_rc;
     float shannon_limit;
-
+    size_t nbCores;
 	
 public:
 
     /** */
     Read2SV (char* graphFile, const int size_tolerance_rc);
+    virtual ~Read2SV();
     void find_ALL_occurrences_of_inversion_pattern (LCS& lcs_instance, FILE * out, const int& local_complexity_threshold);
     bool checkPath (Node nodeV, Node nodeB);
     bool conserve_inversion(const Node& a, const Node& u, const Node& v, const Node& b);
@@ -67,7 +68,7 @@ private:
     
     /** */
     void execute ();
-  
+    ISynchronizer* synchro;
     
     
 };

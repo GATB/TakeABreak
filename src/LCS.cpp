@@ -39,6 +39,17 @@ LCS::LCS(const size_t& k, const int& max_percentage){
     }
 }
 
+LCS::LCS(const LCS& lcs){
+    _kmerSize = lcs._kmerSize;
+    lcs_threshold = lcs.lcs_threshold;
+    opt = (int **) malloc(sizeof(int *)*(_kmerSize+1));
+    if(opt == NULL) {fprintf(stderr,"cannot allocate memory for LCS computation\n"); exit(1);}
+    for(int i=0;i<_kmerSize+1;i++) {
+        opt[i]=(int *)malloc(sizeof(int)*(_kmerSize+1));
+        if(opt[i] == NULL) {fprintf(stderr,"cannot allocate memory for LCS computation (line %d)\n",i); exit(1);}
+    }
+}
+
 LCS::~LCS(){
     for(int i=0;i<_kmerSize+1;i++) free(opt[i]);
     free(opt);

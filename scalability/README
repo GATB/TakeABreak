@@ -1,0 +1,6 @@
+Scalability results
+
+Results from the job_scalability_igrida.sh script (executed on the IGRIDA cluster).
+
+NB: files named *-scalability.txt contain the following columns:
+        $base_name $nbCores $time_elapsed $speedup

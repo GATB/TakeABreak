@@ -38,6 +38,7 @@ public:
     int lcs_threshold;
     int** opt;
     LCS(const size_t& k, const int& max_percentage);
+    LCS(const LCS& lcs);
     ~LCS();
     
     // Computes the lcs of two objects of size k
