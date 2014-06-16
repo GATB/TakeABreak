@@ -70,7 +70,24 @@ private:
     void execute ();
     ISynchronizer* synchro;
     
+    /** Functor called for each node.
+     * NOTE: Previous version used lambda expressions (which made the code clearer) BUT old compilers may not support it,
+     * so we go back to the old way with a functor coded as a struct. */
+    struct MainLoopFunctor
+    {
+        MainLoopFunctor (Read2SV& ref, ThreadObject<LCS>& lcs, int local_complexity_threshold, FILE* out, int& number_inv_found)
+            : ref(ref), lcs(lcs), local_complexity_threshold(local_complexity_threshold), number_inv_found(number_inv_found), out(out)  {}
+
+        void operator() (Node& node);
+
+        Read2SV& ref;
+        ThreadObject<LCS>& lcs;
+        int local_complexity_threshold;
+        int& number_inv_found;
+        FILE* out;
+    };
     
+    friend struct MainLoopFunctor;
 };
 
 /********************************************************************************/

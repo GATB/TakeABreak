@@ -454,6 +454,123 @@ bool Read2SV::print_canonical(const Node& a, const Node& u, const Node& v, const
     return false;
 }
 
+/********************************************************************************/
+void Read2SV::MainLoopFunctor::operator() (Node& nodeA)
+{
+    LCS& lcs_instance = lcs();
+
+#ifdef check_memory
+    if (KERN_SUCCESS != task_info(mach_task_self(),
+            TASK_BASIC_INFO, (task_info_t)&t_info,
+            &t_info_count))
+    {
+        exit(1);
+    }
+    if(t_info.resident_size>max_mem) max_mem=t_info.resident_size;
+#endif
+
+    //if(!conserve_node(_graph.toString(nodeA).c_str(),shannon_limit)) continue;
+
+
+    /** We iterate the strands */
+    for(int strand=0;strand<2;strand++){ // each strand
+#ifdef debug
+        cout<<"strand = "<<strand<<" Node A = "<<_graph.toString(nodeA)<<" -- out degree ="<<_graph.outdegree (nodeA)<<endl;
+#endif
+        if(ref._graph.outdegree (nodeA)<2) {nodeA=ref._graph.reverse(nodeA); continue;}
+        Graph::Vector<Node> neighborsA = ref._graph.neighbors<Node> (nodeA, DIR_OUTCOMING);
+        vector<DBGWalker> Ualpha;
+#ifdef debug
+        cout<<neighborsA.size()<<" neighbor"<<endl;
+#endif
+
+        int maxalpha=0; // the largest U id
+        // retreiving the U's for each alpha
+        for(int alpha=0;alpha<neighborsA.size();alpha++){
+            DBGWalker dbgw(ref._graph);
+            dbgw.find_all_at_depth(neighborsA[alpha], ref._graph.getKmerSize()-1);
+            Ualpha.push_back(dbgw);
+            if(alpha>0 && dbgw.reachable_neighbor.size()>Ualpha[maxalpha].reachable_neighbor.size()) maxalpha=alpha; // stores the indice of the biggest set U.
+
+#ifdef debug
+            cout<<"Size U"<<alpha<<" = "<<dbgw.reachable_neighbor.size()<<endl;
+#endif
+        }// end retreiving the U's for each alpha
+#ifdef debug
+        cout<<"comb fact"<<combinatorial_factor<<endl;
+#endif
+
+        // put the largest U at the last position: neighborsA.size()-1
+        DBGWalker temp_walk=Ualpha[neighborsA.size()-1];
+        Ualpha[neighborsA.size()-1]=Ualpha[maxalpha];
+        Ualpha[maxalpha]=temp_walk;
+
+        // detects the indice of the 2nd largest U that is the largest Ualpha, excepted the last one
+        int indice_second_bigger_U=0;
+        for(int indice_alpha=0;indice_alpha<neighborsA.size()-1;indice_alpha++)
+            if(Ualpha[indice_alpha].reachable_neighbor.size()>Ualpha[indice_second_bigger_U].reachable_neighbor.size()) indice_second_bigger_U=indice_alpha;
+
+        // filtering on the cardinality of number of kmers reachable from node A
+        if(Ualpha[neighborsA.size()-1].reachable_neighbor.size() * Ualpha[indice_second_bigger_U].reachable_neighbor.size() > local_complexity_threshold) continue;
+
+
+        for(int master_group=0;master_group<neighborsA.size()-1;master_group++){ // choosing the master group
+            //cout<<"master group "<<master_group<<endl;
+            vector<Node> current_master_u = Ualpha[master_group].reachable_neighbor; // get the U set of master group
+            for(int id_u=0;id_u<current_master_u.size();id_u++){ // for each u of the Umaster
+                DBGWalker B(ref._graph);
+                //if(!conserve_node(_graph.toString(current_master_u[id_u]),shannon_limit)) continue;
+                B.find_B(nodeA,current_master_u[id_u],ref.size_tolerance_rc, lcs_instance); // get the set of B
+                // if number of comparisons of size of set B with the largest U is too big, we stop.
+                if(Ualpha[neighborsA.size()-1].reachable_neighbor.size()*B.reachable_neighbor.size()>local_complexity_threshold) continue;
+                vector<Node> set_B = B.reachable_neighbor;
+                for(int id_b=0;id_b<set_B.size();id_b++){ // for each b in B
+                    //                        if(!conserve_node(_graph.toString(set_B[id_b]),shannon_limit)) continue;
+                    for(int alpha_other_group=master_group+1;alpha_other_group<neighborsA.size();alpha_other_group++){ // for each other group
+                        for(int id_v_other_group=0;id_v_other_group<Ualpha[alpha_other_group].reachable_neighbor.size();id_v_other_group++){ // each u (== vbar) in the other groups
+                            Node v=ref._graph.reverse(Ualpha[alpha_other_group].reachable_neighbor[id_v_other_group]);
+                            //                                if(!conserve_node(_graph.toString(v),shannon_limit)) continue;
+#ifdef debug
+                            cout<<"checking:"<<endl;
+                            cout<<"  "<<_graph.toString(nodeA)<<" shannon "<<shannon_index(_graph.toString(nodeA))<<endl;
+                            cout<<"  "<<_graph.toString(current_master_u[id_u])<<" shannon "<<shannon_index(_graph.toString(current_master_u[id_u]))<<endl;
+                            cout<<"  "<<_graph.toString(v)<<" shannon "<<shannon_index(_graph.toString(v))<<endl;
+                            cout<<"  "<<_graph.toString(set_B[id_b])<<" shannon "<<shannon_index(_graph.toString(set_B[id_b]))<<endl;;
+#endif
+                            if(lcs_instance.size_lcs(ref._graph.toString(current_master_u[id_u]), ref._graph.toString(ref._graph.reverse(v)))<lcs_instance.lcs_threshold && ref.checkPath(v,set_B[id_b]))
+                                //                                   &&
+                                //                                   conserve_inversion(nodeA,current_master_u[id_u], v, set_B[id_b])
+                                //                                   &&
+                                //                                   check_tolerance(_graph.reverse(nodeA), set_B[id_b], size_tolerance_rc) // tolerance of size_tolerance_rc characters similar between a and b'
+                                //                                   &&
+                                //                                   check_tolerance(v, _graph.reverse(current_master_u[id_u]), size_tolerance_rc) // tolerance of size_tolerance_rc characters similar between v and u'
+                            { // found one path
+                                //                                    cout<<"I found inversion (a,u,v,b) : ("<<number_substitutions(_graph.toString(nodeA),_graph.toString(_graph.reverse(set_B[id_b])))<<" subst a, rcb) - combinatorial_factor="<<combinatorial_factor<<endl;
+                                //                                    cout<<"  "<<_graph.toString(nodeA)<<" shannon "<<shannon_index(_graph.toString(nodeA))<<endl;
+                                //                                    cout<<"  "<<_graph.toString(current_master_u[id_u])<<" shannon "<<shannon_index(_graph.toString(current_master_u[id_u]))<<endl;
+                                //                                    cout<<"  "<<_graph.toString(v)<<" shannon "<<shannon_index(_graph.toString(v))<<endl;
+                                //                                    cout<<"  "<<_graph.toString(set_B[id_b])<<" shannon "<<shannon_index(_graph.toString(set_B[id_b]))<<endl;
+                                ref.print_canonical(nodeA, current_master_u[id_u], v, set_B[id_b], number_inv_found, out);
+
+                                //                                    cout<<"a vs b':"<<endl<<"\t"<<_graph.toString(nodeA)<<endl<<"\t"<<_graph.toString(_graph.reverse(set_B[id_b]))<<endl;
+                                //                                    cout<<"u vs v':"<<endl<<"\t"<<_graph.toString(current_master_u[id_u])<<endl<<"\t"<<_graph.toString(_graph.reverse(v))<<endl;
+                                //                                    cout<<" "<<_graph.toString(nodeA)<<_graph.toString(current_master_u[id_u])<<"au"<<endl;
+                                //                                    cout<<" "<<_graph.toString(_graph.reverse(set_B[id_b]))<<_graph.toString(_graph.reverse(v))<<"b'v'"<<endl;
+
+                            } // end found one path
+                        } // end each u (== vbar) in the other groups
+                    } // end each other group
+                } // end each b in B
+            } // end each u of the Umaster
+        } // end choosing the master group
+        /** We check the other strand */
+        nodeA=ref._graph.reverse(nodeA);
+    } // end each strand
+
+}
+
+/********************************************************************************/
+
 //Pour tous les kmers branchants sur chaque strand a:
 //  Si a->out_neighbor <2: continue (avoids dead end "branching kmers")
 //  pour tout (a+1) (neigbor de a)
@@ -476,138 +593,21 @@ void Read2SV::find_ALL_occurrences_of_inversion_pattern (LCS& lcsParam, FILE * o
 #endif
     
     int number_inv_found=0;
-    
+
+    /** We use a dispatcher object for parallelization, with a given number of cores to be used. */
     Dispatcher dispatcher (nbCores);
 
-    Graph::Iterator<BranchingNode> branchingNodes = _graph.iterator<BranchingNode> ();
+    /** We define an iterator over the branching nodes of the graph. We use also progress information. */
+    ProgressGraphIterator<BranchingNode, ProgressTimer> branchingNodes (_graph.iterator<BranchingNode>(), "looping nodes");
     
-    unsigned long nb_treated=0;
-    /** We iterate all the branching nodes of the graph. */
-
+    /** We use one LCS object per thread => this is done thanks to the ThreadObject class. */
     ThreadObject<LCS> lcs (lcsParam);
 
-    IDispatcher::Status status = dispatcher.iterate (branchingNodes, [&] (Node nodeA)
-   {
-        LCS& lcs_instance = lcs();
+    /** Functor called for each branching node. */
+    MainLoopFunctor functor (*this, lcs, local_complexity_threshold, out, number_inv_found);
 
-    #ifdef check_memory
-            if (KERN_SUCCESS != task_info(mach_task_self(),
-                                          TASK_BASIC_INFO, (task_info_t)&t_info,
-                                          &t_info_count))
-            {
-                exit(1);
-            }
-            if(t_info.resident_size>max_mem) max_mem=t_info.resident_size;
-    #endif
-            if(nb_treated%1000==0){
-    //            cout<<"\r"<<100*nb_treated/branchingNodes.size()<<" % done ("<<nb_treated<<" branching nodes treated)";
-                cout<<"\r"<<nb_treated<<" branching nodes treated";
-
-            }
-            nb_treated++;
-            
-            //if(!conserve_node(_graph.toString(nodeA).c_str(),shannon_limit)) continue;
-            
-
-            /** We iterate the strands */
-            for(int strand=0;strand<2;strand++){ // each strand
-    #ifdef debug
-                cout<<"strand = "<<strand<<" Node A = "<<_graph.toString(nodeA)<<" -- out degree ="<<_graph.outdegree (nodeA)<<endl;
-    #endif
-                if(_graph.outdegree (nodeA)<2) {nodeA=_graph.reverse(nodeA); continue;}
-                Graph::Vector<Node> neighborsA = _graph.neighbors<Node> (nodeA, DIR_OUTCOMING);
-                vector<DBGWalker> Ualpha;
-    #ifdef debug
-                cout<<neighborsA.size()<<" neighbor"<<endl;
-    #endif
-
-
-
-
-                int maxalpha=0; // the largest U id
-                // retreiving the U's for each alpha
-                for(int alpha=0;alpha<neighborsA.size();alpha++){
-                    DBGWalker dbgw(_graph);
-                    dbgw.find_all_at_depth(neighborsA[alpha], _graph.getKmerSize()-1);
-                    Ualpha.push_back(dbgw);
-                    if(alpha>0 && dbgw.reachable_neighbor.size()>Ualpha[maxalpha].reachable_neighbor.size()) maxalpha=alpha; // stores the indice of the biggest set U.
-
-    #ifdef debug
-                    cout<<"Size U"<<alpha<<" = "<<dbgw.reachable_neighbor.size()<<endl;
-    #endif
-                }// end retreiving the U's for each alpha
-    #ifdef debug
-                cout<<"comb fact"<<combinatorial_factor<<endl;
-    #endif
-
-                // put the largest U at the last position: neighborsA.size()-1
-                DBGWalker temp_walk=Ualpha[neighborsA.size()-1];
-                Ualpha[neighborsA.size()-1]=Ualpha[maxalpha];
-                Ualpha[maxalpha]=temp_walk;
-
-                // detects the indice of the 2nd largest U that is the largest Ualpha, excepted the last one
-                int indice_second_bigger_U=0;
-                for(int indice_alpha=0;indice_alpha<neighborsA.size()-1;indice_alpha++)
-                    if(Ualpha[indice_alpha].reachable_neighbor.size()>Ualpha[indice_second_bigger_U].reachable_neighbor.size()) indice_second_bigger_U=indice_alpha;
-
-                // filtering on the cardinality of number of kmers reachable from node A
-                if(Ualpha[neighborsA.size()-1].reachable_neighbor.size() * Ualpha[indice_second_bigger_U].reachable_neighbor.size() > local_complexity_threshold) continue;
-                
-
-                for(int master_group=0;master_group<neighborsA.size()-1;master_group++){ // choosing the master group
-                    //cout<<"master group "<<master_group<<endl;
-                    vector<Node> current_master_u = Ualpha[master_group].reachable_neighbor; // get the U set of master group
-                    for(int id_u=0;id_u<current_master_u.size();id_u++){ // for each u of the Umaster
-                        DBGWalker B(_graph);
-                        //if(!conserve_node(_graph.toString(current_master_u[id_u]),shannon_limit)) continue;
-                        B.find_B(nodeA,current_master_u[id_u],size_tolerance_rc, lcs_instance); // get the set of B
-                        // if number of comparisons of size of set B with the largest U is too big, we stop.
-                        if(Ualpha[neighborsA.size()-1].reachable_neighbor.size()*B.reachable_neighbor.size()>local_complexity_threshold) continue;
-                        vector<Node> set_B = B.reachable_neighbor;
-                        for(int id_b=0;id_b<set_B.size();id_b++){ // for each b in B
-    //                        if(!conserve_node(_graph.toString(set_B[id_b]),shannon_limit)) continue;
-                            for(int alpha_other_group=master_group+1;alpha_other_group<neighborsA.size();alpha_other_group++){ // for each other group
-                                for(int id_v_other_group=0;id_v_other_group<Ualpha[alpha_other_group].reachable_neighbor.size();id_v_other_group++){ // each u (== vbar) in the other groups
-                                    Node v=_graph.reverse(Ualpha[alpha_other_group].reachable_neighbor[id_v_other_group]);
-    //                                if(!conserve_node(_graph.toString(v),shannon_limit)) continue;
-    #ifdef debug
-                                        cout<<"checking:"<<endl;
-                                        cout<<"  "<<_graph.toString(nodeA)<<" shannon "<<shannon_index(_graph.toString(nodeA))<<endl;
-                                        cout<<"  "<<_graph.toString(current_master_u[id_u])<<" shannon "<<shannon_index(_graph.toString(current_master_u[id_u]))<<endl;
-                                        cout<<"  "<<_graph.toString(v)<<" shannon "<<shannon_index(_graph.toString(v))<<endl;
-                                        cout<<"  "<<_graph.toString(set_B[id_b])<<" shannon "<<shannon_index(_graph.toString(set_B[id_b]))<<endl;;
-    #endif
-                                    if(lcs_instance.size_lcs(_graph.toString(current_master_u[id_u]), _graph.toString(_graph.reverse(v)))<lcs_instance.lcs_threshold && checkPath(v,set_B[id_b]))
-    //                                   &&
-    //                                   conserve_inversion(nodeA,current_master_u[id_u], v, set_B[id_b])
-    //                                   &&
-    //                                   check_tolerance(_graph.reverse(nodeA), set_B[id_b], size_tolerance_rc) // tolerance of size_tolerance_rc characters similar between a and b'
-    //                                   &&
-    //                                   check_tolerance(v, _graph.reverse(current_master_u[id_u]), size_tolerance_rc) // tolerance of size_tolerance_rc characters similar between v and u'
-                                       { // found one path
-    //                                    cout<<"I found inversion (a,u,v,b) : ("<<number_substitutions(_graph.toString(nodeA),_graph.toString(_graph.reverse(set_B[id_b])))<<" subst a, rcb) - combinatorial_factor="<<combinatorial_factor<<endl;
-    //                                    cout<<"  "<<_graph.toString(nodeA)<<" shannon "<<shannon_index(_graph.toString(nodeA))<<endl;
-    //                                    cout<<"  "<<_graph.toString(current_master_u[id_u])<<" shannon "<<shannon_index(_graph.toString(current_master_u[id_u]))<<endl;
-    //                                    cout<<"  "<<_graph.toString(v)<<" shannon "<<shannon_index(_graph.toString(v))<<endl;
-    //                                    cout<<"  "<<_graph.toString(set_B[id_b])<<" shannon "<<shannon_index(_graph.toString(set_B[id_b]))<<endl;
-                                           print_canonical(nodeA, current_master_u[id_u], v, set_B[id_b], number_inv_found, out);
-
-    //                                    cout<<"a vs b':"<<endl<<"\t"<<_graph.toString(nodeA)<<endl<<"\t"<<_graph.toString(_graph.reverse(set_B[id_b]))<<endl;
-    //                                    cout<<"u vs v':"<<endl<<"\t"<<_graph.toString(current_master_u[id_u])<<endl<<"\t"<<_graph.toString(_graph.reverse(v))<<endl;
-    //                                    cout<<" "<<_graph.toString(nodeA)<<_graph.toString(current_master_u[id_u])<<"au"<<endl;
-    //                                    cout<<" "<<_graph.toString(_graph.reverse(set_B[id_b]))<<_graph.toString(_graph.reverse(v))<<"b'v'"<<endl;
-
-                                    } // end found one path
-                                } // end each u (== vbar) in the other groups
-                            } // end each other group
-                        } // end each b in B
-                    } // end each u of the Umaster
-                } // end choosing the master group
-                /** We check the other strand */
-                nodeA=_graph.reverse(nodeA);
-            } // end each strand
-   });
-    cout<<"\r"<<nb_treated<<" branching nodes treated"<<endl;
+    /** We iterate all the branching nodes of the graph. */
+    IDispatcher::Status status = dispatcher.iterate (branchingNodes, functor);
     
     cout<<number_inv_found<<" inversions were found"<<endl;
     
