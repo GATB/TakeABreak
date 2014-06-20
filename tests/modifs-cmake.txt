@@ -1,0 +1,14 @@
+# we define the files to be compiled
+file (GLOB_RECURSE  ProjectFiles  src/*)
+#file (GLOB_RECURSE  TestDBGWalkerFiles  src/* tests/test_DBGWalker_texas_ranger.cpp)
+#file (GLOB_RECURSE  TestClavetteFiles   src/* tests/testClavette.cpp)
+
+# we define the artifact to be built: the project binary
+add_executable        (${PROJECT_NAME}  src/${PROJECT_NAME}.cpp ${ProjectFiles})
+#add_executable        (testDBGWalker ${TestDBGWalkerFiles})
+#add_executable        (testClavette  ${TestClavetteFiles})
+
+# we define which libraries to be linked with project binary
+target_link_libraries (${PROJECT_NAME}  ${gatb-core-libraries})
+#target_link_libraries (testDBGWalker   ${gatb-core-libraries})
+#target_link_libraries (testClavette    ${gatb-core-libraries})
