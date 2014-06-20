@@ -13,8 +13,8 @@ mkdir build
 cd build/
 cmake -DMAJOR=$1 -DMINOR=$2 -DPATCH=$3 ..
 
-# make delivery
+make delivery
 
 ## Pour tester ce qu'il y a dans les archives avant d'envoyer sur la forge
 # make package
-make package_source
+# make package_source

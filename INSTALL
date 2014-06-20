@@ -4,7 +4,7 @@ mkdir bin build
 cd build
 # Prepare the makefile
 cmake ..
-# Run the new create makefile:
+# Run the newly created makefile:
 make
 # Copy the created binaries in ../bin:
 cp ext/gatb-core/bin/dbgh5 ../bin/
