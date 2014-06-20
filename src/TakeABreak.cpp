@@ -25,6 +25,11 @@
 #include <LCS.hpp>
 
 
+#include <gatb/system/api/config.hpp>
+//to get the version number when making delivery. This file is filled when making : cmake -DMAJOR=3 -DMINOR=4 -DPATCH=11 ..
+// variable name is STR_LIBRARY_VERSION
+
+
 //#define check_memory // http://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
 #ifdef check_memory
 #include<mach/mach.h>
@@ -674,7 +679,8 @@ using namespace std;
 
 
 char * getVersion(){
-	return (char *)"1.0.5 AGPL";
+	//return (char *)"1.0.5 AGPL";
+    return (char *)STR_LIBRARY_VERSION;
 }
 //#define VERBOSE
 
