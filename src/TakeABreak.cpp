@@ -25,9 +25,6 @@
 #include <LCS.hpp>
 
 
-#include <gatb/system/api/config.hpp>
-//to get the version number when making delivery. This file is filled when making : cmake -DMAJOR=3 -DMINOR=4 -DPATCH=11 ..
-// variable name is STR_LIBRARY_VERSION
 
 
 //#define check_memory // http://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
@@ -46,21 +43,6 @@ using namespace std;
 #define only_canonical
 //#define COMBINATORIAL_FACTOR 1000
 #define DEBUG(a)  printf a
-
-/********************************************************************************/
-// We define some string constants.
-/********************************************************************************/
-//const char* Read2SV::STRING_KMER_SIZE          = "-kmer-size";
-//const char* Read2SV::STRING_URI_SOLID_KMERS    = "-solid-file";
-//const char* Read2SV::STRING_KMER_CFP           = "-debloom-file";
-
-
-// these 2 tabs are now known globally
-//char bin2NT[4] = {'A','C','T','G'};
-//char binrev[4]    = {2,3,0,1};
-
-//char bin2NTrev[4] = {'T','G','A','C'};
-
 
 
 
@@ -171,6 +153,7 @@ float shannon_index(const string& read)
 	return fabs(index);
 }
 
+// NO LONGER USED Returns True if the Shannon entropy of the node is above the limit (used as a filter)
 bool conserve_node(const string& read, const float shannon_limit){
     // if the first or last X characters are the same, discard the node
     int i;
@@ -187,7 +170,7 @@ bool conserve_node(const string& read, const float shannon_limit){
     return shannon_index(read)>shannon_limit;
 }
 
-
+// NO LONGER USED Counts the number of substitutions between 2 kmers (when aligned naively)
 inline int number_substitutions(const string& a, const string& b){
     int res=0;
     for(int i=0;i<a.length();i++) if(a[i]!=b[i]) res++;
@@ -196,22 +179,24 @@ inline int number_substitutions(const string& a, const string& b){
 }
 
 
-
+// USED ONLY AS A TEST : Returns True if prefixes of size size_tolerance_rc of both strings are different
 bool Read2SV::check_tolerance(const Node& s1, const Node& s2, const int size_tolerance_rc){
     if(_graph.toString(s1).substr(0,size_tolerance_rc+1).compare(_graph.toString(s2).substr(0,size_tolerance_rc+1))==0) return false;
     return true;
 }
 
+// NO LONGER USED : Returns True if both pairs a-bbar and u-vbar have more than 10 substutions (when aligned naively)
 bool Read2SV::conserve_inversion(const Node& a, const Node& u, const Node& v, const Node& b){
     const int limit_subsitutions=10; // TODO parameter?
-    // checks that a is different enought from rc(b)
+    // checks that a is different enough from rc(b)
     if(number_substitutions(_graph.toString(a),_graph.toString(_graph.reverse(b)))<=limit_subsitutions) return false;
-    // checks that u is different enought from rc(v)
+    // checks that u is different enough from rc(v)
     if(number_substitutions(_graph.toString(u),_graph.toString(_graph.reverse(v)))<=limit_subsitutions) return false;
     
     return true;
 }
 
+// Returns the position of the smallest string
 inline int which_min_8(const string strings[]){
     int min=0;
     for(int i=1;i<8;i++) if (strings[i].compare(strings[min])<0) min=i;
@@ -219,7 +204,7 @@ inline int which_min_8(const string strings[]){
     
 }
 
-
+// Computes longest common prefix between two sequences
 inline int lcp(const string& a, const string& b){
     int lcp=0;
     while(true){
@@ -230,25 +215,25 @@ inline int lcp(const string& a, const string& b){
 }
 
 
-// prints 4 sequences of size at most 2k each
+// prints 4 sequences of size at most 2k-2 each
 // Algo
 
-// 1: cas general, sans imbrication de séquences:
-// écriture de la version canonique:
-// min(au, av', u'a', u'b, b'v', b'u, vb, va') --> indique si on choisi solution a, u', b', ou v (liviu = 0, 1, 2, 3)
-// 0:0 =    au  ; vb  ; av' ; u'b  (si au==min)
-// 1:1 =    u'a'; b'v'; u'b ; av'  (si u'a'==min)
-// 2:2 =    vb  ; au  ; va' ; b'u  (si vb==min)
-// 3:3 =    b'v'; u'a'; b'u ; va'  (si b'v'==min)
-// 4:0bis = av' ; u'b ; au  ; vb   (si av'==min)
-// 5:1bis = u'b ; av' ; u'a'; b'v' (si u'b==min)
-// 6:2bis = va' ; b'u ; vb  ; au   (si va'==min)
-// 7:3bis = b'u ; va' ; b'v'; u'a' (si b'u==min)
-// code: créer les 8 séquences, et ecrire la plus petite.
+// 1: case without small repeats :
+// writing the canonical version:
+// min(au, av', u'a', u'b, b'v', b'u, vb, va') --> indicates which solution we choose a, u', b', or v (liviu = 0, 1, 2, 3)
+// 0:0 =    au  ; vb  ; av' ; u'b  (if au==min)
+// 1:1 =    u'a'; b'v'; u'b ; av'  (if u'a'==min)
+// 2:2 =    vb  ; au  ; va' ; b'u  (if vb==min)
+// 3:3 =    b'v'; u'a'; b'u ; va'  (if b'v'==min)
+// 4:0bis = av' ; u'b ; au  ; vb   (if av'==min)
+// 5:1bis = u'b ; av' ; u'a'; b'v' (if u'b==min)
+// 6:2bis = va' ; b'u ; vb  ; au   (if va'==min)
+// 7:3bis = b'u ; va' ; b'v'; u'a' (if b'u==min)
+// code: create the 8 sequences, 2k-2 sequences : removes first and last character, and writes the smallest
 
-// 2: cas avec imbrication de séquences. Il faut conserver que les séquences communes aux 4 possibilités de détection.
+// 2: general case, with repeats. We need to keep only the subsequences common to all 4 possibilities of detection (starting node)
 // x=lcp(a',b)
-// u=u[0,|u|-x] // permet de conserver les sequences communes aux 4 possibilités de détections quand il y imbrication de séquences (fin de a = debut de rev comp de b)
+// u=u[0,|u|-x] // (end of a = beginning of rev comp of b)
 // v=v[x,|v|]
 bool Read2SV::print_canonical(const Node& a, const Node& u, const Node& v, const Node& b, int& number_inv_found, FILE * out){
     string strings[8];
@@ -576,17 +561,17 @@ void Read2SV::MainLoopFunctor::operator() (Node& nodeA)
 
 /********************************************************************************/
 
-//Pour tous les kmers branchants sur chaque strand a:
-//  Si a->out_neighbor <2: continue (avoids dead end "branching kmers")
-//  pour tout (a+1) (neigbor de a)
-//    Ualpha = extension à k-1 de (a+1), sans aucune contrainte
-//    Pour master_group de 0 à a->out_neighbor-2
-//      pour tout u de Umaster_group:
+//For each branching kmer, on each strand -> a:
+//  If a->out_neighbor <2: continue (avoids dead end "branching kmers")
+//  For each (a+1) (neigbor de a)
+//    Ualpha = (k-1)-extension of (a+1), without any constraint
+//    For each master_group from 0 to a->out_neighbor-2
+//      For each u in Umaster_group:
 //          B = give_me_B(a,u,size_tolerance_rc)
-//          pour tout b de B:
-//             pour tout alpha > master_group // groupes pour lesquels on n'a pas (encore) calculé les b's
-//                pour tout vbar dans Ualpha:
-//                   Si check_path(v,b):
+//          For each b of B:
+//             For each alpha > master_group // groups for which we have not yet computed the b's
+//                For each vbar in Ualpha:
+//                   If check_path(v,b):
 //                      output (auvb)
 void Read2SV::find_ALL_occurrences_of_inversion_pattern (LCS& lcsParam, FILE * out, const int& local_complexity_threshold)
 {
@@ -671,11 +656,12 @@ bool Read2SV::checkPath (Node nodeV, Node nodeB)
 
 
 
-
-
 // We use the required packages
 
 using namespace std;
+#include <gatb/system/api/config.hpp>
+//to get the version number when making delivery. This file is filled when making : cmake -DMAJOR=3 -DMINOR=4 -DPATCH=11 ..
+// variable name is STR_LIBRARY_VERSION
 
 
 char * getVersion(){
@@ -710,7 +696,6 @@ void print_usage_and_exit(char * name){
 int main (int argc, char* argv[])
 {
     std::cout.setf(std::ios::unitbuf); // avoids the buffer on the cout.
-
 
 
     char* graphFile = NULL;
