@@ -614,7 +614,7 @@ void Read2SV::find_ALL_occurrences_of_inversion_pattern (LCS& lcsParam, FILE * o
     /** We iterate all the branching nodes of the graph. */
     IDispatcher::Status status = dispatcher.iterate (branchingNodes, functor);
     
-    cout<<number_inv_found<<" inversion motifs were found"<<endl;
+    //cout<<number_inv_found<<" inversion motif occurrences were found"<<endl;
     
     
 #ifdef check_memory
