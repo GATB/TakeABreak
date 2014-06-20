@@ -93,7 +93,7 @@ INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE       DESTINATION .)
 INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/TakeABreak.sh DESTINATION .)
 
 # For the source archive, we exclude some unwanted directories.
-SET (CPACK_SOURCE_IGNORE_FILES  ${CPACK_SOURCE_IGNORE_FILES} "/build/"  "/distrib/"   "/tests/"  ".gitignore$")
+SET (CPACK_SOURCE_IGNORE_FILES  ${CPACK_SOURCE_IGNORE_FILES} "/build*"  "/distrib*"   "/tests*" "../../cmake/Delivery.cmake" "genere_distrib.sh"  ".gitignore$")
 
 # To be done at the end. 
 INCLUDE (Delivery)
