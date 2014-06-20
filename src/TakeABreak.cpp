@@ -609,7 +609,7 @@ void Read2SV::find_ALL_occurrences_of_inversion_pattern (LCS& lcsParam, FILE * o
     /** We iterate all the branching nodes of the graph. */
     IDispatcher::Status status = dispatcher.iterate (branchingNodes, functor);
     
-    cout<<number_inv_found<<" inversions were found"<<endl;
+    cout<<number_inv_found<<" inversion motifs were found"<<endl;
     
     
 #ifdef check_memory
@@ -674,7 +674,7 @@ using namespace std;
 
 
 char * getVersion(){
-	return (char *)"1.0.0 Licence In progress";
+	return (char *)"1.0.5 AGPL";
 }
 //#define VERBOSE
 
@@ -693,6 +693,7 @@ void print_usage_and_exit(char * name){
 	fprintf (stderr, "\t -m INT: max_sim: max similarity percentage: Inversions with a and b' (or u and v') whose longuest common subsequence size is bigger than k*(this value)/100 are discarded. Defaults: 80 \n");
 	fprintf (stderr, "\t -c INT: LCT (local complexity threshold): Defaults: 100 \n");
 	fprintf (stderr, "\t -r INT: (optimization parameter lower=longer, higher=false negatives) max repeated size suffix of u and v': Defaults: 8 \n");
+    fprintf (stderr, "\t -a INT: number of cores to be used for computation : Defaults: 0, ie. all available cores will be used\n");
 	fprintf (stderr, "\t -h prints this message and exit\n");
     
     
@@ -710,7 +711,7 @@ int main (int argc, char* argv[])
     int tolerance_rc= 8;
     int max_percentage = 80;
     int local_complexity_threshold = 100;
-    size_t nb_cores(1);
+    size_t nb_cores(0);
 
     char * output_file= NULL;
     

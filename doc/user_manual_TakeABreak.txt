@@ -37,6 +37,7 @@ MANUAL
 			* the local complexity threshold (see publication). (option -c of TakeABreak.sh, default 100)
 			* the max similarity percentage: Inversions with a and b' (or u and v') whose longest common subsequence size is bigger than k*(this value)/100 are discarded. (option -m of TakeABreak.sh, default 80)
 			* [optimization parameter lower=longer, higher=false negatives] max repeated size suffix of u and reverse complement of v: (option -r of TakeABreak.sh, default 8)
+			* number of cores to be used for computation (option -a, default 0, ie. all available cores will be used)
 	
 	C/ Full TakeABreak.sh input data
 		If read set(s) is/are provided (option -r) TakeABreak.sh scripts pipelines the de Bruijn graph creation plus the breakpoint detection phase. In this case user can provide previously described de Bruijn graph creation options plus the breakpoint detection options. 
@@ -63,5 +64,6 @@ This toy example can be run with the provided data.
 		
 	
 4/ Publication
-Paper "Mapping-free and assembly-free discovery of inversion breakpoints from raw NGS reads" By Claire Lemaitre, Liviu Ciortuz and Pierre Peterlongo is currently under review.
+Mapping-Free and Assembly-Free Discovery of Inversion Breakpoints from Raw NGS Reads. Claire Lemaitre, Liviu Ciortuz, and Pierre Peterlongo. AlCoB 2014 (Tarragona), LNBI vol. 8542, pp. 119--130.
+
  
