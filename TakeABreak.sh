@@ -3,7 +3,7 @@
 
 function resume_parameters {
 	
-	printf '%s\n\n' "***Parameters values***"
+	printf '%s\n\n' "***Parameter values***"
 	printf '%s\n' "Output prefix: "$prefix_output
 	
 	if [ "$graph_file" == "" ]; then
@@ -24,19 +24,19 @@ function resume_parameters {
 function help {
 printf '%s\n' "TakeBreak.sh,"
 printf '%s\n' "Usage: ./TakeBreak.sh options"
-printf '\t%s\n'  "In/out Options (-r or -g mandatory):"
-printf '\t\t%s\n'  "-r STRING. List of reads separated by comma ',' without space. Note that reads may be in fasta or fastq format, gzipped or not. Example: -r data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta"
+printf '\t%s\n'  "In/out Options (-i or -g mandatory):"
+printf '\t\t%s\n'  "-i STRING. List of read files separated by comma ',' without space. Note that read files may be in fasta or fastq format, gzipped or not. Example: -i data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta"
 printf '\t\t\t%s\n'  "Incompatible with -g option"
 printf '\t\t%s\n'  "-g STRING. Name of the already existing graph file (.h5)."
 printf '\t\t\t%s\n'  "Incompatible with -r option"
-printf '\t\t%s\n'  "-p STRING. All out files will start with this prefix. Default: \"TakeABreak_Expe-date\""
+printf '\t\t%s\n'  "-o STRING. All output files will start with this prefix. Default: \"TakeABreak_Expe-date\""
 printf '\t%s\n'  "De bruijn Graph Options:"
 printf '\t\t%s\n'  "-k INT. Set the length of used kmers. Incompatible with -g option. Default=31."
-printf '\t\t%s\n'  "-S INT. Set the Solidity of used kmers (minimal number of occurrences a k-mer should have not to be treated as sequencing error). Incompatible with -g option. Default=3."
+printf '\t\t%s\n'  "-S INT. Set the Solidity threshold of used kmers (minimal number of occurrences a k-mer should have to be kept in the de Bruin Graph). Incompatible with -g option. Default=3."
 printf '\t%s\n'  "Inversion detection options:"
-printf '\t\t%s\n'  "-c INT. LCT (local complexity threshold): Defaults: 100."
-printf '\t\t%s\n'  "-m INT: max_sim: max similarity percentage: Inversions with a and b' (or u and v') whose longuest common subsequence size is bigger than k*(this value)/100 are discarded. Defaults: 80"
-printf '\t\t%s\n'  "-r INT: (optimization parameter lower=longer, higher=false negatives) max repeated size suffix of u and v': Defaults: 8"
+printf '\t\t%s\n'  "-c INT. LCT (local complexity threshold): Default=100."
+printf '\t\t%s\n'  "-m INT: max_sim: max similarity percentage: inversions with a and b' (or u and v') whose longuest common subsequence size is bigger than k*(this value)/100 are discarded. Default=80"
+printf '\t\t%s\n'  "-r INT: max repeated size suffix of u and v' (optimization parameter if larger, more sensitive but longer running time). Default=8."
 printf '\t\t%s\n'  "-a INT: number of cores to be used for computation : Defaults: 0, ie. all available cores will be used"
 printf '%s\n' "Any further question: read the readme file or contact us: claire.lemaitre@inria.fr"
 }
@@ -57,7 +57,7 @@ prefix_output="TakeABreak_Expe"-`date +"%Y-%m-%d-%H:%M"`
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts "hr:g:k:c:s:p:r:a:S:" opt; do
+while getopts "hi:g:k:c:m:o:r:a:S:" opt; do
 case $opt in
 
 h)
@@ -65,8 +65,8 @@ help
 exit
 ;;
 
-r)
-printf '%s\n' "use read set: $OPTARG"
+i)
+printf '%s\n' "use read files: $OPTARG"
 read_files=$OPTARG
 ;;
 
@@ -85,8 +85,8 @@ printf '%s\n' "use LCT=$OPTARG (local complexity threshold)"
 loc_cmpx_LCT=$OPTARG
 ;;
 
-s)
-printf '%s\n' "use LCS=$OPTARG (Longuest Common Subsequence percentage of the read threshold)"
+m)
+printf '%s\n' "use LCS=$OPTARG (Longuest Common Subsequence percentage threshold)"
 lcs_restriction_percentage=$OPTARG
 ;;
 
@@ -100,14 +100,14 @@ printf '%s\n' "use nb_cores=$OPTARG"
 nb_cores=$OPTARG
 ;;
 
-p)
+o)
 printf '%s\n' "use prefix=$OPTARG for output files" 
 prefix_output=$OPTARG
 ;;
 
 
 S)
-printf '%s\n' "use solide kmer threshold=$OPTARG" 
+printf '%s\n' "use kmer solidity threshold=$OPTARG"
 nks=$OPTARG
 ;;
 
@@ -133,7 +133,7 @@ if [ "$graph_file" == "" ]&&[ "$read_files" == "" ]; then
 fi
 
 if [ "$graph_file" != "" ]&&[ "$read_files" != "" ]; then
-	printf '%s\n' "-g and -r options are not compatible, exit"
+	printf '%s\n' "-g and -i options are not compatible, exit"
 	help
 	exit
 fi	
@@ -184,7 +184,7 @@ fi
 outfile=$prefix_output".out"
 fastafile=$prefix_output".fasta"
 ## Running BreakFinder
-printf '%s\n' "./bin/TakeABreak -i $graph_file -o $outfile -r $reverse_tolerance -m $lcs_restriction_percentage -c $loc_cmpx_LCT"
+printf '%s\n' "./bin/TakeABreak -i $graph_file -o $outfile -r $reverse_tolerance -m $lcs_restriction_percentage -c $loc_cmpx_LCT -a $nb_cores"
 T="$(date +%s)"
 ./bin/TakeABreak -i $graph_file -o $outfile -r $reverse_tolerance -m $lcs_restriction_percentage -c $loc_cmpx_LCT -a $nb_cores >> $log
 tail -n 2 $log

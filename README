@@ -3,8 +3,8 @@
 #    - TakeABreak that find the Inversion BreakPoints from the graph.
 # NOTE: If you retrieved a source archive, you can compile the project with 'sh INSTALL'
     
-#The TakeABreak.sh pipelines the two tools. Type for instance:
-    sh ./TakeABreak.sh -r data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta
+#The main script TakeABreak.sh pipelines the two tools. Type for instance:
+    sh ./TakeABreak.sh -i data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta
     
 #More details are in doc/user_manual_TakeABreak.txt 
     
