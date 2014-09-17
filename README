@@ -1,6 +1,9 @@
 #The directory bin contains 
 #    - dbgh5 for constructing a de Bruijn graph from any number of read set(s) and
 #    - TakeABreak that find the Inversion BreakPoints from the graph.
+
+# NOTE: copy these executables to some directory in your PATH (for instance /usr/local/bin/), or add this bin/ directory to your PATH variable.
+
 # NOTE: If you retrieved a source archive, you can compile the project with 'sh INSTALL'
     
 #The main script TakeABreak.sh pipelines the two tools. Type for instance:

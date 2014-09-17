@@ -28,7 +28,7 @@ printf '\t%s\n'  "In/out Options (-i or -g mandatory):"
 printf '\t\t%s\n'  "-i STRING. List of read files separated by comma ',' without space. Note that read files may be in fasta or fastq format, gzipped or not. Example: -i data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta"
 printf '\t\t\t%s\n'  "Incompatible with -g option"
 printf '\t\t%s\n'  "-g STRING. Name of the already existing graph file (.h5)."
-printf '\t\t\t%s\n'  "Incompatible with -r option"
+printf '\t\t\t%s\n'  "Incompatible with -i option"
 printf '\t\t%s\n'  "-o STRING. All output files will start with this prefix. Default: \"TakeABreak_Expe-date\""
 printf '\t%s\n'  "De bruijn Graph Options:"
 printf '\t\t%s\n'  "-k INT. Set the length of used kmers. Incompatible with -g option. Default=31."
@@ -127,7 +127,7 @@ done
 #######################################################################
 
 if [ "$graph_file" == "" ]&&[ "$read_files" == "" ]; then
-	printf '%s\n' "-g or -r is mandatory"
+	printf '%s\n' "-g or -i is mandatory"
 	help
 	exit
 fi
@@ -171,9 +171,9 @@ printf '%s\n' "$param_resume" > $log
 ## Generating DBG
 if [ "$graph_file" == "" ]; then
 	graph_file=$prefix_output
-printf '%s\n' "./bin/dbgh5 -in $read_files -nks $nks -kmer-size $k -out $graph_file >> $log"
+printf '%s\n' "dbgh5 -in $read_files -nks $nks -kmer-size $k -out $graph_file -mphf none >> $log"
 T="$(date +%s)"
- ./bin/dbgh5 -in $read_files -nks $nks -kmer-size $k -out $graph_file  >> $log
+ dbgh5 -in $read_files -nks $nks -kmer-size $k -out $graph_file -mphf none >> $log
 T="$(($(date +%s)-T))"
 printf '%s\n' "generating the graph took ${T} seconds"
 printf '%s\n' "generating the graph took ${T} seconds" >> $log
@@ -184,9 +184,9 @@ fi
 outfile=$prefix_output".out"
 fastafile=$prefix_output".fasta"
 ## Running BreakFinder
-printf '%s\n' "./bin/TakeABreak -i $graph_file -o $outfile -r $reverse_tolerance -m $lcs_restriction_percentage -c $loc_cmpx_LCT -a $nb_cores"
+printf '%s\n' "TakeABreak -i $graph_file -o $outfile -r $reverse_tolerance -m $lcs_restriction_percentage -c $loc_cmpx_LCT -a $nb_cores"
 T="$(date +%s)"
-./bin/TakeABreak -i $graph_file -o $outfile -r $reverse_tolerance -m $lcs_restriction_percentage -c $loc_cmpx_LCT -a $nb_cores >> $log
+TakeABreak -i $graph_file -o $outfile -r $reverse_tolerance -m $lcs_restriction_percentage -c $loc_cmpx_LCT -a $nb_cores >> $log
 tail -n 2 $log
 T="$(($(date +%s)-T))"
 printf '%s\n' "finding inversion motifs took ${T} seconds"
