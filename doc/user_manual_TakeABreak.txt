@@ -25,7 +25,7 @@ MANUAL
 	TakeABreak detects inversion breakpoints directly from raw NGS reads, without the need of any reference genome and without de novo assembling the genomes. Its implementation has a very limited memory footprint (less than 6GB for analyzing a full human NGS dataset) and acceptable runtime.
 		
 2/ Usage
-	TakeABreak is a bash script that consists of two main steps. The first one creates a de Bruijn graph from one or several sets of fasta or fastq files (gzipped or not). The second one searches for inversion signatures into this so-created graph. 
+	TakeABreak is a bash script that consists of two main steps. The first one creates a de Bruijn graph from one or several sets of fasta or fastq files (gzipped or not). The second one searches for inversion signatures into this so-created graph. Before running TakeABreak.sh, make sure that both binaries, dbgh5 and TakeABreak, are accessible via the PATH environment variable.
 	
 	A/ de Bruijn graph creation options.
 		In addition to input read set(s), the de Bruijn graph creation uses two additional parameters: 
