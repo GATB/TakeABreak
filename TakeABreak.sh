@@ -171,9 +171,9 @@ printf '%s\n' "$param_resume" > $log
 ## Generating DBG
 if [ "$graph_file" == "" ]; then
 	graph_file=$prefix_output
-printf '%s\n' "dbgh5 -in $read_files -nks $nks -kmer-size $k -out $graph_file -mphf none >> $log"
+printf '%s\n' "dbgh5 -in $read_files -abundance $nks -kmer-size $k -out $graph_file -mphf none >> $log"
 T="$(date +%s)"
- dbgh5 -in $read_files -nks $nks -kmer-size $k -out $graph_file -mphf none >> $log
+ dbgh5 -in $read_files -abundance $nks -kmer-size $k -out $graph_file -mphf none >> $log
 T="$(($(date +%s)-T))"
 printf '%s\n' "generating the graph took ${T} seconds"
 printf '%s\n' "generating the graph took ${T} seconds" >> $log
