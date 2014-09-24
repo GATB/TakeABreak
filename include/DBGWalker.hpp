@@ -34,16 +34,36 @@ class DBGWalker {
 public:
     Graph _graph; // needed to have the string of a node
     std::vector<Node> reachable_neighbor;
-    
-    DBGWalker(char* graphFile);
-    DBGWalker(Graph& _graph);
+    size_t idxRecursion;
+    size_t _lct; // local complexity threshold, size limit for reachable_neighbor (limit also for the product of the current size x a given one)
+
+
+    DBGWalker()  { }
+    DBGWalker(char* graphFile); // no longer used
+    DBGWalker(Graph& _graph); // no longer used
     ~DBGWalker();
+
+    /**
+     * Initialization of the object. Note that it is mandatory...
+     */
+    void setInfo (const Graph& graph, size_t lct)  { _graph = graph;  _lct=lct;  reachable_neighbor.resize (_lct+1); }
     
+    /**
+     * Gives the size of the filled reachable_neighbor 
+     * Note that reachable_neighbor.size() is to forbid, since it will always output _lct + 1, which is not the actual number of neighbors)
+     */
+    size_t size () const { return idxRecursion; }
+    /**
+     * enables to sort a set of DBGwalker objects
+     */
+    bool operator< (const DBGWalker& other) const  {  return size() < other.size(); }
+
     /**
      * Finds all kmers reachable from nodeA, after k steps.
      * fills the reachable_neighbor vector
+     * The last parameter : maxOtherSize enables to stop the recursion search earlier according to the _lct limit
      */
-    void find_all_at_depth(const Node& nodeA, const int depth);
+    void find_all_at_depth(const Node& nodeA, const int depth, size_t maxOtherSize);
     
     /**
      * Provides all kmers that can be reached from node rcu, after k steps
@@ -54,7 +74,7 @@ public:
     
     
 private:
-    void recursive_find_all_at_depth(const Node& nodeA, const int depth);
+    void recursive_find_all_at_depth(const Node& nodeA, const int depth, size_t maxOtherSize);
     void recursive_find_B(const Node& cur, const int size_tolerance_rc, const int depth, const int distance_from_start, const std::string& forbiden_kmer,
                           LCS& lcs_instance, const std::string& rca);
 };

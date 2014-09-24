@@ -1,5 +1,5 @@
 # Prepare directories:
-mkdir bin build
+mkdir build
 # Go in the 'build' directory
 cd build
 # Prepare the makefile
