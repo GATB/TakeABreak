@@ -41,7 +41,7 @@ mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
 using namespace std;
 
 //#define debug
-//#define only_canonical
+#define only_canonical
 //#define COMBINATORIAL_FACTOR 1000
 #define DEBUG(a)  printf a
 
@@ -511,10 +511,6 @@ void Read2SV::MainLoopFunctor::operator() (Node& nodeA)
         // sort the U's in increasing size order : heuristic to reduce the loop sizes
         std::sort (Ualpha.begin(), Ualpha.end());
 
-        // here could stop the search : if one U size is LCT+1
-//        if(Ualpha[neighborsA.size()-1].size() > local_complexity_threshold){
-//            continue;
-//        }
 
         // checks that at least 2 Ualpha are not empty (the two largest ones)
         if(Ualpha[neighborsA.size()-1].size()==0 || Ualpha[neighborsA.size()-2].size()==0)
@@ -536,11 +532,10 @@ void Read2SV::MainLoopFunctor::operator() (Node& nodeA)
                 B.setInfo(ref._graph, local_complexity_threshold);
 
                 //if(!conserve_node(_graph.toString(current_master_u[id_u]),shannon_limit)) continue;
-                B.find_B(nodeA,current_master_u[id_u],ref.size_tolerance_rc, lcs_instance); // get the set of B
-                //TODO optimization to add : add largest U size in find_B to test if multiplication < lct
+                B.find_B(nodeA,current_master_u[id_u],ref.size_tolerance_rc, lcs_instance, maxUSize); // get the set of B
 
                 // if number of comparisons of size of set B with the largest U is too big, we stop.
-                if(Ualpha[neighborsA.size()-1].size()*B.size()>local_complexity_threshold) continue;
+                if(maxUSize*B.size()>local_complexity_threshold) continue;
 
                 for(int id_b=0;id_b<B.size();id_b++){ // for each b in B
                     //                        if(!conserve_node(_graph.toString(set_B[id_b]),shannon_limit)) continue;

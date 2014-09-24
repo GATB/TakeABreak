@@ -70,13 +70,13 @@ public:
      * constraint: the kmer at step size_tolerance_rc(+1?) (=forbiden kmer) should be distinct from the 'equivalent' in au (= rc(au)[size_tolerance_rc, size_tolerance_rc+k]
      * fills the reachable_neighbor vector
      */
-    void find_B(const Node& a, const Node& u, const int size_tolerance_rc, LCS& lcs_instance);
+    void find_B(const Node& a, const Node& u, const int size_tolerance_rc, LCS& lcs_instance, size_t maxOtherSize);
     
     
 private:
     void recursive_find_all_at_depth(const Node& nodeA, const int depth, size_t maxOtherSize);
     void recursive_find_B(const Node& cur, const int size_tolerance_rc, const int depth, const int distance_from_start, const std::string& forbiden_kmer,
-                          LCS& lcs_instance, const std::string& rca);
+                          LCS& lcs_instance, size_t maxOtherSize, const std::string& rca);
 };
 
 

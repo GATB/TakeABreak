@@ -112,13 +112,12 @@ void DBGWalker::find_all_at_depth(const Node& nodeA, const int depth, size_t max
  ** REMARKS :
  *********************************************************************/
 void DBGWalker::recursive_find_B(const Node& cur, const int size_tolerance_rc, const int depth, const int distance_from_start, const string& forbiden_kmer,
-                                 LCS& lcs_instance, const string& rca){
+                                 LCS& lcs_instance, size_t maxOtherSize, const string& rca){
     // deal with possible eroneous call of the function
     if(depth<0) return;
 
     // finished if we have reached the lct limit
-    //TODO replace 1 with a maxOtherSize (similar to find_all_at_depth())
-    if(std::max((size_t)1, (size_t)1) * this->size() > _lct)  {  return;  }
+    if(std::max((size_t)1, maxOtherSize) * this->size() > _lct)  {  return;  }
 
 
 //#define debug
@@ -153,6 +152,7 @@ void DBGWalker::recursive_find_B(const Node& cur, const int size_tolerance_rc, c
                                                         distance_from_start+1,
                                                         forbiden_kmer,
                                                         lcs_instance,
+                                                        maxOtherSize,
                                                         rca);
     
 }
@@ -167,7 +167,7 @@ void DBGWalker::recursive_find_B(const Node& cur, const int size_tolerance_rc, c
  ** RETURN  :
  ** REMARKS :
  *********************************************************************/
-void DBGWalker::find_B(const Node& a,const Node& u, const int size_tolerance_rc, LCS& lcs_instance){
+void DBGWalker::find_B(const Node& a,const Node& u, const int size_tolerance_rc, LCS& lcs_instance, size_t maxOtherSize){
 #ifdef debug
     cout<<"find B"<<endl;
     cout<<"a="<<_graph.toString(a)<<endl;
@@ -181,7 +181,7 @@ void DBGWalker::find_B(const Node& a,const Node& u, const int size_tolerance_rc,
     
     
     idxRecursion = 0;
-    recursive_find_B(rcu,size_tolerance_rc,_graph.getKmerSize(),0,forbiden_kmer, lcs_instance, _graph.toString(rca));
+    recursive_find_B(rcu,size_tolerance_rc,_graph.getKmerSize(),0,forbiden_kmer, lcs_instance, maxOtherSize, _graph.toString(rca));
     
     // checks if the LCS is sufficient.
     
