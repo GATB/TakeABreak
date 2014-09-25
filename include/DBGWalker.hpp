@@ -39,8 +39,8 @@ public:
 
 
     DBGWalker()  { }
-    DBGWalker(char* graphFile); // no longer used
-    DBGWalker(Graph& _graph); // no longer used
+    DBGWalker(char* graphFile, size_t lct); // no longer used
+    DBGWalker(Graph& graph, size_t lct); // no longer used
     ~DBGWalker();
 
     /**

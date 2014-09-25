@@ -20,15 +20,6 @@
 
 
 
-//
-//  BBGWalker.cpp
-//  read2SV
-//
-//  Created by Pierre Peterlongo on 26/11/2013.
-//  Copyright (c) 2013 Pierre Peterlongo. All rights reserved.
-//
-
-
 
 #include <DBGWalker.hpp>
 #include <iostream>
@@ -47,12 +38,14 @@ DBGWalker::~DBGWalker(){
  ** RETURN  :
  ** REMARKS :
  *********************************************************************/
-DBGWalker::DBGWalker (char* graphFile)
+DBGWalker::DBGWalker (char* graphFile, size_t lct)
 {
     _graph = Graph::load (graphFile);
+    _lct=lct;
 }
-DBGWalker::DBGWalker (Graph& _graph){
+DBGWalker::DBGWalker (Graph& graph, size_t lct){
     this->_graph=_graph;
+    this->_lct=lct;
 }
 
 /*********************************************************************
