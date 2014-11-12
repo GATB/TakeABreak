@@ -31,6 +31,8 @@
 #include <string>
 #include <sstream>
 #include <LCS.hpp>
+#include <Solution.hpp>
+#include <set>
 
 /********************************************************************************/
 /* Class Read2SV*/
@@ -50,6 +52,8 @@ public:
     int size_tolerance_rc;
     float shannon_limit;
     size_t nbCores;
+    //set<string> _sol;
+    set<Solution> _solutions;
 	
 public:
 
@@ -64,6 +68,13 @@ public:
 	
 	
     bool print_canonical(const Node& a, const Node& u, const Node& v, const Node& b, int& number_inv_found, FILE * out);
+    string get_canonical(const Node& a, const Node& u, const Node& v, const Node& b);
+    Solution get_canonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b);
+
+    void writeResults(FILE * out);
+    
+    ISynchronizer* getSynchro(){return synchro;}
+    
 private:
     
     /** */
