@@ -20,11 +20,12 @@
 
 #include <gatb/gatb_core.hpp>
 #include <DBGWalker.hpp>
-#include <Read2SV.hpp>
+#include <TakeABreak.hpp>
 #include <iostream>
 #include <algorithm>
 #include <LCS.hpp>
 #include <Solution.hpp>
+#include <time.h>
 
 
 
@@ -45,6 +46,16 @@ using namespace std;
 //#define COMBINATORIAL_FACTOR 1000
 #define DEBUG(a)  printf a
 
+#include <gatb/system/api/config.hpp>
+//to get the version number when making delivery. This file is filled when making : cmake -DMAJOR=3 -DMINOR=4 -DPATCH=11 ..
+// variable name is STR_LIBRARY_VERSION
+
+char * getVersion(){
+	//return (char *)"1.0.5 AGPL";
+    return (char *)STR_LIBRARY_VERSION;
+}
+
+
 
 
 /*********************************************************************
@@ -55,15 +66,39 @@ using namespace std;
 ** RETURN  :
 ** REMARKS :
 *********************************************************************/
-Read2SV::Read2SV (char* graphFile, const int size_tolerance_rc) : Tool("read2SV"), _kmerSize(27), shannon_limit(1.7)
+TakeABreak::TakeABreak () : Tool("TakeABreak"), _kmerSize(27), shannon_limit(1.7)
 {
-    _graph = Graph::load (graphFile);
-    
-    _kmerSize = _graph.getKmerSize();
-    
-    this->size_tolerance_rc=size_tolerance_rc;
 
-    synchro = System::thread().newSynchronizer();
+    //Getting the options of graph (ie. dbgh5)
+    OptionsParser parser = Graph::getOptionsParser(false);
+    getParser()->add (parser);
+    getParser()->push_front (new OptionOneParam (STR_URI_INPUT, "input read file(s)",  false, ""));
+    
+    //remove unused options
+//    getParser()->remove(STR_BLOOM_TYPE);
+//    getParser()->remove(STR_DEBLOOM_TYPE);
+//    getParser()->remove(STR_MPHF_TYPE);
+//    getParser()->remove(STR_BANK_CONVERT_TYPE);
+//    getParser()->remove(STR_URI_SOLID_KMERS);
+//    getParser()->remove(STR_BRANCHING_TYPE);
+//    getParser()->remove(STR_URI_OUTPUT_DIR);
+    
+    // remove redundant options
+    getParser()->remove(STR_NB_CORES);
+    getParser()->remove(STR_VERBOSE);
+    getParser()->remove(STR_HELP);
+    
+    //Adding options specific to TakeABreak
+    getParser()->push_front (new OptionOneParam (STR_URI_GRAPH, "input graph file (likely a hdf5 file)",  false, ""));
+    getParser()->push_front (new OptionOneParam (STR_TOLERANCE_RC, "maximal repeat size at the breakpoint (longest common suffix between u and v')", false, "8"));
+    getParser()->push_front (new OptionOneParam (STR_LCT, "local complexity threshold (LCT)", false, "100"));
+    getParser()->push_front (new OptionOneParam (STR_MAX_SIM, "max similarity percentage between a and b' and between u and v'", false, "80"));
+    //fprintf (stderr, "\t -m INT: max_sim: max similarity percentage: Inversions with a and b' (or u and v') whose longuest common subsequence size is bigger than k*(this value)/100 are discarded. Defaults: 80 \n");
+	//fprintf (stderr, "\t -c INT: LCT (local complexity threshold): Defaults: 100 \n");
+	//fprintf (stderr, "\t -r INT: (optimization parameter lower=longer, higher=false negatives) max repeated size suffix of u and v': Defaults: 8 \n");
+
+    
+    
 }
 
 /*********************************************************************
@@ -74,7 +109,7 @@ Read2SV::Read2SV (char* graphFile, const int size_tolerance_rc) : Tool("read2SV"
 ** RETURN  :
 ** REMARKS :
 *********************************************************************/
-Read2SV::~Read2SV ()
+TakeABreak::~TakeABreak ()
 {
     delete synchro;
 }
@@ -87,19 +122,128 @@ Read2SV::~Read2SV ()
 ** RETURN  :
 ** REMARKS :
 *********************************************************************/
-void Read2SV::execute ()
+void TakeABreak::execute ()
 {
-    /*************************************************/
-    // We set some attributes (shortcuts).
-    /*************************************************/
-//    _kmerSize                      = getInput()->getInt (Read2SV::STRING_KMER_SIZE);
-//    std::string kmerSize                      = getInput()->getStr (Read2SV::STRING_KMER_SIZE);
-//    std::string solidFile          = getInput()->getStr (Read2SV::STRING_URI_SOLID_KMERS);
-//    std::string debloomFile        = getInput()->getStr (Read2SV::STRING_KMER_CFP);
+
+    if (getInput()->get(STR_VERSION) != 0){
+        cout << "TakeABreak version "<< getVersion() <<endl;
+        return;
+    }
+    if ((getInput()->get(STR_URI_GRAPH) != 0 && getInput()->get(STR_URI_INPUT) != 0) || (getInput()->get(STR_URI_GRAPH) == 0 && getInput()->get(STR_URI_INPUT) == 0))
+    {
+        cerr << "ERROR : options -graph and -in are incompatible, but at least one of these is mandatory" << endl;
+        getParser()->displayHelp();
+        return;
+    }
+
+    //char * output_file= NULL;
     
-    /** We create the graph with the user parameters. */
+    if (getInput()->get(STR_URI_OUTPUT) == 0)
+    {
+        time_t     now = time(0);
+        struct tm  tstruct;
+        char       buf[80];
+        tstruct = *localtime(&now);
+        strftime(buf, sizeof(buf), "%Y-%m-%d.%I:%M", &tstruct);
+        string outputPrefix="TakeABreak_Expe-"+string(buf);
+
+        getInput()->add (0, STR_URI_OUTPUT, outputPrefix);
+        //getInput()->get(STR_URI_OUTPUT)->value="TakeABreak_Expe";
         
+        cout << getInput()->getStr(STR_URI_OUTPUT) << endl;
+    }
     
+    
+    //log file
+    string log_file=getInput()->getStr(STR_URI_OUTPUT)+".log";
+    FILE * log = fopen(log_file.c_str(), "w");
+    if(log != NULL){
+        cout << "Log info are dumped in file " << log_file << endl;
+    }
+    
+    
+    if (getInput()->get(STR_URI_GRAPH) != 0)
+    {
+        //printf ("GRAPH FILE REQUIRED...\n");
+        fprintf(log,"Loading the graph from file %s\n",getInput()->getStr(STR_URI_GRAPH).c_str());
+        _graph = Graph::load (getInput()->getStr(STR_URI_GRAPH));
+        _kmerSize = _graph.getKmerSize();
+        fprintf(log,"\n*******Graph info*******\n");
+        stringstream info;
+        info << _graph.getInfo();
+        fprintf(log,"%s",info.str().c_str());
+        fprintf(log,"**************************\n");
+        //cout << _kmerSize << endl;
+    }
+    
+    if (getInput()->get(STR_URI_INPUT) != 0)
+    {
+        //printf ("READS FILE REQUIRED...\n");
+        fprintf(log,"Creating the graph from file(s) %s\n",getInput()->getStr(STR_URI_INPUT).c_str());
+        _graph = Graph::create (getInput());
+        _kmerSize = getInput()->getInt(STR_KMER_SIZE);
+        fprintf(log,"\n*******Graph info*******\n");
+        stringstream info;
+        info << _graph.getInfo();
+        fprintf(log,"%s",info.str().c_str());
+        fprintf(log,"**************************\n");
+    }
+    
+    _tolerance_rc = getInput()->getInt(STR_TOLERANCE_RC);
+    _nbCores = getInput()->getInt(STR_NB_CORES);
+    _max_sim = getInput()->getInt(STR_MAX_SIM);
+    _LCT = getInput()->getInt(STR_LCT);
+    synchro = System::thread().newSynchronizer();
+    
+    if(_tolerance_rc>_kmerSize-1){
+        _tolerance_rc=_kmerSize-1;
+        fprintf(stderr," Warning : reverse tolerance can't be bigger than k-2, setting reverse tolerance to k-1=%d \n", _tolerance_rc);
+    }
+    
+    printParameters(log);
+    
+    //cout << getInput()->getStr(STR_URI_OUTPUT) << endl;
+    string output_file=getInput()->getStr(STR_URI_OUTPUT)+".fasta";
+    LCS lcs_instance(_kmerSize, _max_sim);
+    FILE * out = fopen(output_file.c_str(), "w");
+    if(out == NULL){
+        cerr <<" Cannot open file "<< output_file <<" for writting" << endl;
+        return;
+    }
+    
+    time_t start = time(0);
+    find_ALL_occurrences_of_inversion_pattern(lcs_instance);
+    size_t number_inv_found=writeResults(out);
+    time_t end = time(0);
+
+    double seconds=difftime(end,start);
+    //cout << "time spent=" << end - start << endl;
+    fprintf(log,"Finding inversions took %.f seconds\n",seconds);
+    fprintf(log,"%zi inversions were found\n",number_inv_found);
+    fprintf(log,"Results are written in file %s\n",output_file.c_str());
+    cout<<number_inv_found<<" inversions were found, results in file "<< output_file <<endl;
+    
+    fclose(out);
+    fclose(log);
+
+}
+
+void TakeABreak::printParameters(FILE * log){
+    stringstream allParams;
+    allParams << "*******Parameter values*******" <<endl;
+    allParams << "Output prefix: " << getInput()->getStr(STR_URI_OUTPUT) << endl;
+    allParams << "de Bruijn Graph: " << endl;
+    allParams << "\tk=" << _kmerSize << endl;
+    allParams << "\tmin abundance=" << _graph.getInfo().getStr(ATTR_KMER_ABUNDANCE) << endl;
+
+    allParams <<  "Inversion detection:" << endl;
+	allParams <<  "\treverse_tolerance=" << _tolerance_rc << endl;
+	allParams <<  "\tLCT=" << _LCT << endl;
+	allParams <<  "\tmax_sim="<< _max_sim << endl;
+    allParams <<  "*****************************" << endl;
+
+    fprintf(log,"%s",allParams.str().c_str());
+
 }
 
 // dirty but efficient: declare
@@ -180,14 +324,14 @@ inline int number_substitutions(const string& a, const string& b){
 }
 
 
-// USED ONLY AS A TEST : Returns True if prefixes of size size_tolerance_rc of both strings are different
-bool Read2SV::check_tolerance(const Node& s1, const Node& s2, const int size_tolerance_rc){
-    if(_graph.toString(s1).substr(0,size_tolerance_rc+1).compare(_graph.toString(s2).substr(0,size_tolerance_rc+1))==0) return false;
+// USED ONLY AS A TEST : Returns True if prefixes of size _tolerance_rc of both strings are different
+bool TakeABreak::check_tolerance(const Node& s1, const Node& s2, const int _tolerance_rc){
+    if(_graph.toString(s1).substr(0,_tolerance_rc+1).compare(_graph.toString(s2).substr(0,_tolerance_rc+1))==0) return false;
     return true;
 }
 
 // NO LONGER USED : Returns True if both pairs a-bbar and u-vbar have more than 10 substutions (when aligned naively)
-bool Read2SV::conserve_inversion(const Node& a, const Node& u, const Node& v, const Node& b){
+bool TakeABreak::conserve_inversion(const Node& a, const Node& u, const Node& v, const Node& b){
     const int limit_subsitutions=10; // TODO parameter?
     // checks that a is different enough from rc(b)
     if(number_substitutions(_graph.toString(a),_graph.toString(_graph.reverse(b)))<=limit_subsitutions) return false;
@@ -216,234 +360,6 @@ inline int lcp(const string& a, const string& b){
 }
 
 
-// prints 4 sequences of size at most 2k-2 each
-// Algo
-
-// 1: case without small repeats :
-// writing the canonical version:
-// min(au, av', u'a', u'b, b'v', b'u, vb, va') --> indicates which solution we choose a, u', b', or v (liviu = 0, 1, 2, 3)
-// 0:0 =    au  ; vb  ; av' ; u'b  (if au==min)
-// 1:1 =    u'a'; b'v'; u'b ; av'  (if u'a'==min)
-// 2:2 =    vb  ; au  ; va' ; b'u  (if vb==min)
-// 3:3 =    b'v'; u'a'; b'u ; va'  (if b'v'==min)
-// 4:0bis = av' ; u'b ; au  ; vb   (if av'==min)
-// 5:1bis = u'b ; av' ; u'a'; b'v' (if u'b==min)
-// 6:2bis = va' ; b'u ; vb  ; au   (if va'==min)
-// 7:3bis = b'u ; va' ; b'v'; u'a' (if b'u==min)
-// code: create the 8 sequences, 2k-2 sequences : removes first and last character, and writes the smallest
-
-// 2: general case, with repeats. We need to keep only the subsequences common to all 4 possibilities of detection (starting node)
-// x=lcp(a',b)
-// u=u[0,|u|-x] // (end of a = beginning of rev comp of b)
-// v=v[x,|v|]
-bool Read2SV::print_canonical(const Node& a, const Node& u, const Node& v, const Node& b, int& number_inv_found, FILE * out){
-    string strings[8];
-    bool output = false;
-    
-    LocalSynchronizer local(synchro);
-    
-    Node abar=_graph.reverse(a);
-    Node bbar=_graph.reverse(b);
-    Node ubar=_graph.reverse(u);
-    Node vbar=_graph.reverse(v);
-    
-    
-    int x=lcp(_graph.toString(abar),_graph.toString(b));
-    
-
-    string new_u_str = _graph.toString(u).substr(0, _kmerSize-x);
-    string new_ubar_str = _graph.toString(ubar).substr(x, _kmerSize-x);
-    string new_v_str = _graph.toString(v).substr(x, _kmerSize-x);
-    string new_vbar_str = _graph.toString(vbar).substr(0, _kmerSize-x);
-    
-    strings[0]=_graph.toString(a)+new_u_str; // 0
-    strings[0]=strings[0].substr(1,strings[0].length()-2);
-    
-    strings[1]=new_ubar_str+_graph.toString(abar); // 1
-    strings[1]=strings[1].substr(1,strings[1].length()-2);
-    
-    strings[2]=new_v_str+_graph.toString(b); // 2
-    strings[2]=strings[2].substr(1,strings[2].length()-2);
-    
-    strings[3]=_graph.toString(bbar)+new_vbar_str; // 3
-    strings[3]=strings[3].substr(1,strings[3].length()-2);
-    
-    strings[4]=_graph.toString(a)+new_vbar_str; // 0bis
-    strings[4]=strings[4].substr(1,strings[4].length()-2);
-    
-    strings[5]=new_ubar_str+_graph.toString(b); // 1bis
-    strings[5]=strings[5].substr(1,strings[5].length()-2);
-    
-    strings[6]=new_v_str+_graph.toString(abar); // 2bis
-    strings[6]=strings[6].substr(1,strings[6].length()-2);
-    
-    strings[7]=_graph.toString(bbar)+new_u_str; // 3bis
-    strings[7]=strings[7].substr(1,strings[7].length()-2);
-    
-    int min = which_min_8(strings);
-    
-//    cout<<" min = "<<min<<" (x= "<<x<<")"<<endl;
-//    cout<<strings[0]<<endl;
-//        cout<<strings[1]<<endl;
-//        cout<<strings[2]<<endl;
-//        cout<<strings[3]<<endl;
-//        cout<<strings[4]<<endl;
-//        cout<<strings[5]<<endl;
-//        cout<<strings[6]<<endl;
-//        cout<<strings[7]<<endl;
-    switch (min) {
-        case 0:
-            // fasta mode (not removing first and last letters):
-            //            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[0].c_str(), strings[2].c_str(), strings[4].c_str(), strings[5].c_str());
-            
-            // r2sv mode: (allows the sort -u)
-            // Prints au vb av' u'b
-            // 1/ removing the first character of au and av' and last character of vb and u'b
-            // 2/ only if x==0, removing the last character of au and av' and the first character of vb and u'b (else, if x>0, it was already removed)
-//            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-//                    x>0?strings[0].substr(1).c_str():strings[0].substr(1,strings[0].length()-1).c_str(), // au, removing first character and maybe last
-//                    x>0?strings[2].substr(0,strings[2].length()-1).c_str():strings[2].substr(1,strings[2].length()-1).c_str(), // vb, maybe removeing first and removeing last
-//                    x>0?strings[4].substr(1).c_str():strings[4].substr(1,strings[4].length()-1).c_str(), // av' removing first character and maybe last
-//                    x>0?strings[5].substr(0,strings[5].length()-1).c_str():strings[5].substr(1,strings[5].length()-1).c_str()); // vb, maybe removeing first and removeing last
-        
-            
-            // r2sv mode: (allows the sort -u)
-            // Prints au vb av' u'b
-            // removing the first and last character of au and av' and first and last character of vb and u'b
-            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[0].c_str(),  // au removing first and  last
-                    strings[2].c_str(),  // vb removing first and  last
-                    strings[4].c_str(),  // av' removing first and  last
-                    strings[5].c_str()); // v'b, removing first and  last
-            
-            output=true;
-            break;
-            
-        case 4:
-            
-            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[4].c_str(),  // av' removing first and  last
-                    strings[5].c_str(),  // vb  removing first and  last
-                    strings[0].c_str(),  // au  removing first and  last
-                    strings[2].c_str()); // vb  removing first and  last
-            
-            output=true;
-            break;
-            
- // Commented all this code, that is useless.
-#ifndef only_canonical
-        case 1:
-            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[1].c_str(),  // av' removing first and  last
-                    strings[3].c_str(),  // vb  removing first and  last
-                    strings[5].c_str(),  // au  removing first and  last
-                    strings[4].c_str()); // vb  removing first and  last
-            
-            output=true;
-            break;
-            
-        case 2:
-            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[2].c_str(),  // av' removing first and  last
-                    strings[0].c_str(),  // vb  removing first and  last
-                    strings[6].c_str(),  // au  removing first and  last
-                    strings[7].c_str()); // vb  removing first and  last
-            
-            output=true;
-            break;
-            
-            
-        case 3:
-            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[3].c_str(),  // av' removing first and  last
-                    strings[1].c_str(),  // vb  removing first and  last
-                    strings[7].c_str(),  // au  removing first and  last
-                    strings[6].c_str()); // vb  removing first and  last
-            
-            output=true;
-            break;
-            
-        case 5:
-            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[5].c_str(),  // av' removing first and  last
-                    strings[4].c_str(),  // vb  removing first and  last
-                    strings[1].c_str(),  // au  removing first and  last
-                    strings[3].c_str()); // vb  removing first and  last
-            
-            output=true;
-            break;
-            
-        case 6:
-            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[6].c_str(),  // av' removing first and  last
-                    strings[7].c_str(),  // vb  removing first and  last
-                    strings[2].c_str(),  // au  removing first and  last
-                    strings[0].c_str()); // vb  removing first and  last
-            
-            output=true;
-            break;
-            
-        case 7:
-            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[7].c_str(),  // av' removing first and  last
-                    strings[6].c_str(),  // vb  removing first and  last
-                    strings[3].c_str(),  // au  removing first and  last
-                    strings[1].c_str()); // vb  removing first and  last
-            
-            output=true;
-            break;
-            
-#endif //not only_canonical
-}
-            
-//        case 1:
-//            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[1].c_str(), strings[3].c_str(), strings[5].c_str(), strings[4].c_str());
-//            
-////            cout<<strings[1]<<" "<<strings[3]<<" "<<strings[5]<<" "<<strings[4]<<endl;
-//            output=true;
-//            break;
-//        case 2:
-//            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[2].c_str(), strings[0].c_str(), strings[6].c_str(), strings[7].c_str());
-//            
-////            cout<<strings[2]<<" "<<strings[0]<<" "<<strings[6]<<" "<<strings[7]<<endl;
-//            output=true;
-//            break;
-//        case 3:
-//            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[3].c_str(), strings[1].c_str(), strings[7].c_str(), strings[6].c_str());
-//            
-//      
-//            
-////            cout<<strings[3]<<" "<<strings[1]<<" "<<strings[7]<<" "<<strings[6]<<endl;
-//            output=true;
-//            break;
-//
-//        case 5:
-//            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[5].c_str(), strings[4].c_str(), strings[1].c_str(), strings[3].c_str());
-//            
-////            cout<<strings[5]<<" "<<strings[4]<<" "<<strings[1]<<" "<<strings[3]<<endl;
-//            output=true;
-//            break;
-//        case 6:
-//            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[6].c_str(), strings[7].c_str(), strings[2].c_str(), strings[0].c_str());
-//            
-////            cout<<strings[6], strings[7]<<" "<<strings[2]<<" "<<strings[0]<<endl;
-//            output=true;
-//            break;
-//        case 7:
-//            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[7].c_str(), strings[6].c_str(), strings[3].c_str(), strings[1].c_str());
-//            
-////            cout<<strings[7], strings[6]<<" "<<strings[3]<<" "<<strings[1]<<endl;
-//            output=true;
-//            break;        default:
-//            break;
-    
-    if(output){
-        number_inv_found++;
-//        delete[] strings;
-        return true;
-    }
-    return false;
-}
 
 // Returns the canonical string of an occurence (4 sequences of size at most 2k-2 each)
 // Algo
@@ -465,145 +381,10 @@ bool Read2SV::print_canonical(const Node& a, const Node& u, const Node& v, const
 // x=lcp(a',b)
 // u=u[0,|u|-x] // (end of a = beginning of rev comp of b)
 // v=v[x,|v|]
-string Read2SV::get_canonical(const Node& a, const Node& u, const Node& v, const Node& b){
+Solution TakeABreak::get_canonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b){
     string strings[8];
-    char canon[512];
-    //LocalSynchronizer local(synchro);
     
-    Node abar=_graph.reverse(a);
-    Node bbar=_graph.reverse(b);
-    Node ubar=_graph.reverse(u);
-    Node vbar=_graph.reverse(v);
-    
-    
-    int x=lcp(_graph.toString(abar),_graph.toString(b));
-    
-    
-    string new_u_str = _graph.toString(u).substr(0, _kmerSize-x);
-    string new_ubar_str = _graph.toString(ubar).substr(x, _kmerSize-x);
-    string new_v_str = _graph.toString(v).substr(x, _kmerSize-x);
-    string new_vbar_str = _graph.toString(vbar).substr(0, _kmerSize-x);
-    
-    strings[0]=_graph.toString(a)+new_u_str; // 0
-    strings[0]=strings[0].substr(1,strings[0].length()-2);
-    
-    strings[1]=new_ubar_str+_graph.toString(abar); // 1
-    strings[1]=strings[1].substr(1,strings[1].length()-2);
-    
-    strings[2]=new_v_str+_graph.toString(b); // 2
-    strings[2]=strings[2].substr(1,strings[2].length()-2);
-    
-    strings[3]=_graph.toString(bbar)+new_vbar_str; // 3
-    strings[3]=strings[3].substr(1,strings[3].length()-2);
-    
-    strings[4]=_graph.toString(a)+new_vbar_str; // 0bis
-    strings[4]=strings[4].substr(1,strings[4].length()-2);
-    
-    strings[5]=new_ubar_str+_graph.toString(b); // 1bis
-    strings[5]=strings[5].substr(1,strings[5].length()-2);
-    
-    strings[6]=new_v_str+_graph.toString(abar); // 2bis
-    strings[6]=strings[6].substr(1,strings[6].length()-2);
-    
-    strings[7]=_graph.toString(bbar)+new_u_str; // 3bis
-    strings[7]=strings[7].substr(1,strings[7].length()-2);
-    
-    int min = which_min_8(strings);
-    
-    switch (min) {
-        case 0:
-            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[0].c_str(),  // au removing first and  last
-                    strings[2].c_str(),  // vb removing first and  last
-                    strings[4].c_str(),  // av' removing first and  last
-                    strings[5].c_str()); // v'b, removing first and  last
-            break;
-            
-        case 4:
-            
-            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[4].c_str(),  // av' removing first and  last
-                    strings[5].c_str(),  // vb  removing first and  last
-                    strings[0].c_str(),  // au  removing first and  last
-                    strings[2].c_str()); // vb  removing first and  last
-            break;
-
-        case 1:
-            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[1].c_str(),  // av' removing first and  last
-                    strings[3].c_str(),  // vb  removing first and  last
-                    strings[5].c_str(),  // au  removing first and  last
-                    strings[4].c_str()); // vb  removing first and  last
-            break;
-            
-        case 2:
-            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[2].c_str(),  // av' removing first and  last
-                    strings[0].c_str(),  // vb  removing first and  last
-                    strings[6].c_str(),  // au  removing first and  last
-                    strings[7].c_str()); // vb  removing first and  last
-            break;
-            
-            
-        case 3:
-            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[3].c_str(),  // av' removing first and  last
-                    strings[1].c_str(),  // vb  removing first and  last
-                    strings[7].c_str(),  // au  removing first and  last
-                    strings[6].c_str()); // vb  removing first and  last
-            break;
-            
-        case 5:
-            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[5].c_str(),  // av' removing first and  last
-                    strings[4].c_str(),  // vb  removing first and  last
-                    strings[1].c_str(),  // au  removing first and  last
-                    strings[3].c_str()); // vb  removing first and  last
-            break;
-            
-        case 6:
-            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[6].c_str(),  // av' removing first and  last
-                    strings[7].c_str(),  // vb  removing first and  last
-                    strings[2].c_str(),  // au  removing first and  last
-                    strings[0].c_str()); // vb  removing first and  last
-            break;
-            
-        case 7:
-            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
-                    strings[7].c_str(),  // av' removing first and  last
-                    strings[6].c_str(),  // vb  removing first and  last
-                    strings[3].c_str(),  // au  removing first and  last
-                    strings[1].c_str()); // vb  removing first and  last
-            break;
-            
-    }
-
-    return canon;
-}
-
-// Returns the canonical string of an occurence (4 sequences of size at most 2k-2 each)
-// Algo
-
-// 1: case without small repeats :
-// writing the canonical version:
-// min(au, av', u'a', u'b, b'v', b'u, vb, va') --> indicates which solution we choose a, u', b', or v (liviu = 0, 1, 2, 3)
-// 0:0 =    au  ; vb  ; av' ; u'b  (if au==min)
-// 1:1 =    u'a'; b'v'; u'b ; av'  (if u'a'==min)
-// 2:2 =    vb  ; au  ; va' ; b'u  (if vb==min)
-// 3:3 =    b'v'; u'a'; b'u ; va'  (if b'v'==min)
-// 4:0bis = av' ; u'b ; au  ; vb   (if av'==min)
-// 5:1bis = u'b ; av' ; u'a'; b'v' (if u'b==min)
-// 6:2bis = va' ; b'u ; vb  ; au   (if va'==min)
-// 7:3bis = b'u ; va' ; b'v'; u'a' (if b'u==min)
-// code: create the 8 sequences, 2k-2 sequences : removes first and last character, and writes the smallest
-
-// 2: general case, with repeats. We need to keep only the subsequences common to all 4 possibilities of detection (starting node)
-// x=lcp(a',b)
-// u=u[0,|u|-x] // (end of a = beginning of rev comp of b)
-// v=v[x,|v|]
-Solution Read2SV::get_canonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b){
-    string strings[8];
+    //cout << "a=" << _graph.toString(a) << " u=" << _graph.toString(u) << " v=" << _graph.toString(v) << " b=" << _graph.toString(b) << endl;
     
     Solution canon;
     
@@ -614,7 +395,6 @@ Solution Read2SV::get_canonicalSolution(const Node& a, const Node& u, const Node
     
     
     int x=lcp(_graph.toString(abar),_graph.toString(b));
-    
     
     string new_u_str = _graph.toString(u).substr(0, _kmerSize-x);
     string new_ubar_str = _graph.toString(ubar).substr(x, _kmerSize-x);
@@ -681,12 +461,12 @@ Solution Read2SV::get_canonicalSolution(const Node& a, const Node& u, const Node
             break;
 #endif
     }
-    
+    //cout << "canon=" << canon._auvb << endl;
     return canon;
 }
 
 
-void Read2SV::writeResults(FILE * out)
+size_t TakeABreak::writeResults(FILE * out)
 {
     size_t count=0;
     while (!_solutions.empty()) {
@@ -695,6 +475,7 @@ void Read2SV::writeResults(FILE * out)
         _solutions.erase(_solutions.begin());
         count=count+res;
     }
+    return count;
 }
 
 /********************************************************************************/
@@ -704,13 +485,13 @@ void Read2SV::writeResults(FILE * out)
 //    Ualpha = (k-1)-extension of (a+1), without any constraint
 //    For each master_group from 0 to a->out_neighbor-2
 //      For each u in Umaster_group:
-//          B = give_me_B(a,u,size_tolerance_rc)
+//          B = give_me_B(a,u,_tolerance_rc)
 //          For each b of B:
 //             For each alpha > master_group // groups for which we have not yet computed the b's
 //                For each vbar in Ualpha:
 //                   If check_path(v,b):
 //                      output (auvb)
-void Read2SV::MainLoopFunctor::operator() (Node& nodeA)
+void TakeABreak::MainLoopFunctor::operator() (Node& nodeA)
 {
     LCS& lcs_instance = lcs();
 
@@ -752,7 +533,7 @@ void Read2SV::MainLoopFunctor::operator() (Node& nodeA)
         size_t maxUSize = 0; // remind the max U size encountered so far, to limit the recursive search with the LCT parameter
         for(int alpha=0;alpha<neighborsA.size();alpha++)
         {
-            Ualpha[alpha].setInfo (ref._graph, local_complexity_threshold); // initialize the DBGwalker object
+            Ualpha[alpha].setInfo (ref._graph, ref._LCT); // initialize the DBGwalker object
 
             Ualpha[alpha].find_all_at_depth(neighborsA[alpha], ref._graph.getKmerSize()-1, maxUSize);
 
@@ -770,7 +551,7 @@ void Read2SV::MainLoopFunctor::operator() (Node& nodeA)
             continue;
         }
         // filtering on the cardinality of number of kmers reachable from node A
-        if(Ualpha[neighborsA.size()-1].size() * Ualpha[neighborsA.size()-2].size() > local_complexity_threshold)
+        if(Ualpha[neighborsA.size()-1].size() * Ualpha[neighborsA.size()-2].size() > ref._LCT)
         {
             continue;
         }
@@ -781,13 +562,13 @@ void Read2SV::MainLoopFunctor::operator() (Node& nodeA)
             for(int id_u=0;id_u<Ualpha[master_group].size();id_u++){ // for each u of the Umaster
 
                 DBGWalker B;
-                B.setInfo(ref._graph, local_complexity_threshold);
+                B.setInfo(ref._graph, ref._LCT);
 
                 //if(!conserve_node(_graph.toString(current_master_u[id_u]),shannon_limit)) continue;
-                B.find_B(nodeA,current_master_u[id_u],ref.size_tolerance_rc, lcs_instance, maxUSize); // get the set of B
+                B.find_B(nodeA,current_master_u[id_u],ref._tolerance_rc, lcs_instance, maxUSize); // get the set of B
 
                 // if number of comparisons of size of set B with the largest U is too big, we stop.
-                if(maxUSize*B.size()>local_complexity_threshold) continue;
+                if(maxUSize*B.size()>ref._LCT) continue;
 
                 for(int id_b=0;id_b<B.size();id_b++){ // for each b in B
                     //                        if(!conserve_node(_graph.toString(set_B[id_b]),shannon_limit)) continue;
@@ -806,9 +587,9 @@ void Read2SV::MainLoopFunctor::operator() (Node& nodeA)
                                 //                                   &&
                                 //                                   conserve_inversion(nodeA,current_master_u[id_u], v, set_B[id_b])
                                 //                                   &&
-                                //                                   check_tolerance(_graph.reverse(nodeA), set_B[id_b], size_tolerance_rc) // tolerance of size_tolerance_rc characters similar between a and b'
+                                //                                   check_tolerance(_graph.reverse(nodeA), set_B[id_b], _tolerance_rc) // tolerance of _tolerance_rc characters similar between a and b'
                                 //                                   &&
-                                //                                   check_tolerance(v, _graph.reverse(current_master_u[id_u]), size_tolerance_rc) // tolerance of size_tolerance_rc characters similar between v and u'
+                                //                                   check_tolerance(v, _graph.reverse(current_master_u[id_u]), _tolerance_rc) // tolerance of _tolerance_rc characters similar between v and u'
                             { // found one path
                                 //                                    cout<<"I found inversion (a,u,v,b) : ("<<number_substitutions(_graph.toString(nodeA),_graph.toString(_graph.reverse(set_B[id_b])))<<" subst a, rcb) - combinatorial_factor="<<combinatorial_factor<<endl;
                                 //                                    cout<<"  "<<_graph.toString(nodeA)<<" shannon "<<shannon_index(_graph.toString(nodeA))<<endl;
@@ -835,19 +616,20 @@ void Read2SV::MainLoopFunctor::operator() (Node& nodeA)
 
 /********************************************************************************/
 // Algorithm is in MainLoopFunctor()
-void Read2SV::find_ALL_occurrences_of_inversion_pattern (LCS& lcsParam, FILE * out, const int& local_complexity_threshold)
+void TakeABreak::find_ALL_occurrences_of_inversion_pattern (LCS& lcsParam)
 {
     // dirty:
     init_int2char();
+    
     
 #ifdef check_memory
     int64_t max_mem=0;
 #endif
     
-    int number_inv_found=0;
+    //int number_inv_found=0;
 
     /** We use a dispatcher object for parallelization, with a given number of cores to be used. */
-    Dispatcher dispatcher (nbCores);
+    Dispatcher dispatcher (_nbCores);
 
     /** We define an iterator over the branching nodes of the graph. We use also progress information. */
     ProgressGraphIterator<BranchingNode, ProgressTimer> branchingNodes (_graph.iterator<BranchingNode>(), "looping nodes");
@@ -856,13 +638,11 @@ void Read2SV::find_ALL_occurrences_of_inversion_pattern (LCS& lcsParam, FILE * o
     ThreadObject<LCS> lcs (lcsParam);
 
     /** Functor called for each branching node. */
-    MainLoopFunctor functor (*this, lcs, local_complexity_threshold, out, number_inv_found);
+    MainLoopFunctor functor (*this, lcs);
 
     /** We iterate all the branching nodes of the graph. */
     IDispatcher::Status status = dispatcher.iterate (branchingNodes, functor);
     
-    //cout<<number_inv_found<<" inversion motif occurrences were found"<<endl;
-    writeResults(out);
     
 #ifdef check_memory
     printf("maximal memory used = %llu\n", max_mem);
@@ -873,7 +653,7 @@ void Read2SV::find_ALL_occurrences_of_inversion_pattern (LCS& lcsParam, FILE * o
 
 // Function to check if there is a path of size k in the DBG to get from nodeV to nodeB
 // We test if each edge exists
-bool Read2SV::checkPath (Node nodeV, Node nodeB)
+bool TakeABreak::checkPath (Node nodeV, Node nodeB)
 {
 
     bool check=true;
@@ -914,130 +694,466 @@ bool Read2SV::checkPath (Node nodeV, Node nodeB)
 
 
 
-/////////////////// MAIN FUNCTION
+/////////////////// OLD MAIN FUNCTION
 
 
 
-// We use the required packages
+//void print_usage_and_exit(char * name){
+//	fprintf (stderr, "NAME\n%s, version %s\n", name, getVersion());
+//	fprintf (stderr, "\nUSAGE\n%s -i input_graph [-t tolerence walk back] [-o name] [-h] \n", name);
+//	fprintf (stderr, "\nDESCRIPTION\n");
+//    
+//    
+//	fprintf (stderr, "\nMANDATORY\n");
+//	fprintf (stderr, "\t -i STRING: File name of the input graph (.h5), omitting the extension name\n");
+//    
+//	fprintf (stderr, "\nOPTIONS\n");
+//	fprintf (stderr, "\t -o STRING file_name for writing results. Default: standard output \n");
+//	fprintf (stderr, "\t -m INT: max_sim: max similarity percentage: Inversions with a and b' (or u and v') whose longuest common subsequence size is bigger than k*(this value)/100 are discarded. Defaults: 80 \n");
+//	fprintf (stderr, "\t -c INT: LCT (local complexity threshold): Defaults: 100 \n");
+//	fprintf (stderr, "\t -r INT: (optimization parameter lower=longer, higher=false negatives) max repeated size suffix of u and v': Defaults: 8 \n");
+//    fprintf (stderr, "\t -a INT: number of cores to be used for computation : Defaults: 0, ie. all available cores will be used\n");
+//	fprintf (stderr, "\t -h prints this message and exit\n");
+//    
+//    
+//	exit(0);
+//}
+//
 
-using namespace std;
-#include <gatb/system/api/config.hpp>
-//to get the version number when making delivery. This file is filled when making : cmake -DMAJOR=3 -DMINOR=4 -DPATCH=11 ..
-// variable name is STR_LIBRARY_VERSION
+//int main (int argc, char* argv[])
+//{
+//    std::cout.setf(std::ios::unitbuf); // avoids the buffer on the cout.
+//
+//
+//    char* graphFile = NULL;
+//    int tolerance_rc= 8;
+//    int max_percentage = 80;
+//    int local_complexity_threshold = 100;
+//    size_t nb_cores(0);
+//
+//    char * output_file= NULL;
+//    
+//    // dealing with options
+//    while (1)
+//	{
+//        int witness = getopt (argc, argv, "hr:i:o:m:c:a:");
+//		if (witness == -1){
+//			break;
+//		}
+//		switch (witness)
+//		{
+//            case 'i':
+//                graphFile=strdup(optarg);
+//                break;
+//            case 'o':
+//                output_file=strdup(optarg);
+//                printf("will output results in %s\n", output_file);
+//                break;
+//            case 'm':
+//                max_percentage=atoi(optarg);
+//                break;
+//            case 'h':
+//                print_usage_and_exit(argv[0]);
+//                break;
+//            case 'r':
+//                tolerance_rc=atoi(optarg);
+//                break;
+//            case 'c':
+//                local_complexity_threshold=atoi(optarg);
+//                break;
+//            case 'a':
+//            	nb_cores=atoi(optarg);
+//            	break;
+//            default:
+//                printf ("Unknown option %c\n", witness);
+//                print_usage_and_exit(argv[0]);
+//		}
+//	}
+//    
+//    if(graphFile == NULL){
+//        fprintf(stderr," Detected error: you must provide an input graph file \n");
+//        print_usage_and_exit(argv[0]);
+//    }
+//    
+//    
+//    
+//    TakeABreak TakeABreak(graphFile, tolerance_rc);
+//    TakeABreak._nbCores=nb_cores;
+//    
+//
+//    if(tolerance_rc>TakeABreak._kmerSize-1){
+//        tolerance_rc=TakeABreak._kmerSize-1;
+//        fprintf(stderr," Warning : tolerence can't be bigger than k-2, set tolerence to k-1=%d \n", tolerance_rc);
+//    }
+//    LCS lcs_instance(TakeABreak._kmerSize, max_percentage);
+//    FILE * out;
+//    if(output_file) out = fopen(output_file, "w");
+//    else out=stdout;
+//    if(out == NULL){
+//        fprintf(stderr," Cannot open file %s for writting \n", output_file);
+//        exit(1);
+//    }
+//    
+//    TakeABreak.find_ALL_occurrences_of_inversion_pattern(lcs_instance, out, local_complexity_threshold);
+//    fclose(out);
+//    
+//    
+//    
+//    return EXIT_SUCCESS;
+//    
+//  
+//}
+//
+
+/********************************************************************************/
+// Old functions (no longer used)
+
+// prints directly in a file 4 sequences of size at most 2k-2 each
+// no longer used, see Solution TakeABreak::get_canonical(...)
 
 
-char * getVersion(){
-	//return (char *)"1.0.5 AGPL";
-    return (char *)STR_LIBRARY_VERSION;
-}
-//#define VERBOSE
+// 1: case without small repeats :
+// writing the canonical version:
+// min(au, av', u'a', u'b, b'v', b'u, vb, va') --> indicates which solution we choose a, u', b', or v (liviu = 0, 1, 2, 3)
+// 0:0 =    au  ; vb  ; av' ; u'b  (if au==min)
+// 1:1 =    u'a'; b'v'; u'b ; av'  (if u'a'==min)
+// 2:2 =    vb  ; au  ; va' ; b'u  (if vb==min)
+// 3:3 =    b'v'; u'a'; b'u ; va'  (if b'v'==min)
+// 4:0bis = av' ; u'b ; au  ; vb   (if av'==min)
+// 5:1bis = u'b ; av' ; u'a'; b'v' (if u'b==min)
+// 6:2bis = va' ; b'u ; vb  ; au   (if va'==min)
+// 7:3bis = b'u ; va' ; b'v'; u'a' (if b'u==min)
+// code: create the 8 sequences, 2k-2 sequences : removes first and last character, and writes the smallest
 
-
-void print_usage_and_exit(char * name){
-	fprintf (stderr, "NAME\n%s, version %s\n", name, getVersion());
-	fprintf (stderr, "\nUSAGE\n%s -i input_graph [-t tolerence walk back] [-o name] [-h] \n", name);
-	fprintf (stderr, "\nDESCRIPTION\n");
+// 2: general case, with repeats. We need to keep only the subsequences common to all 4 possibilities of detection (starting node)
+// x=lcp(a',b)
+// u=u[0,|u|-x] // (end of a = beginning of rev comp of b)
+// v=v[x,|v|]
+bool TakeABreak::print_canonical(const Node& a, const Node& u, const Node& v, const Node& b, int& number_inv_found, FILE * out){
+    string strings[8];
+    bool output = false;
+    
+    LocalSynchronizer local(synchro);
+    
+    Node abar=_graph.reverse(a);
+    Node bbar=_graph.reverse(b);
+    Node ubar=_graph.reverse(u);
+    Node vbar=_graph.reverse(v);
     
     
-	fprintf (stderr, "\nMANDATORY\n");
-	fprintf (stderr, "\t -i STRING: File name of the input graph (.h5), omitting the extension name\n");
-    
-	fprintf (stderr, "\nOPTIONS\n");
-	fprintf (stderr, "\t -o STRING file_name for writing results. Default: standard output \n");
-	fprintf (stderr, "\t -m INT: max_sim: max similarity percentage: Inversions with a and b' (or u and v') whose longuest common subsequence size is bigger than k*(this value)/100 are discarded. Defaults: 80 \n");
-	fprintf (stderr, "\t -c INT: LCT (local complexity threshold): Defaults: 100 \n");
-	fprintf (stderr, "\t -r INT: (optimization parameter lower=longer, higher=false negatives) max repeated size suffix of u and v': Defaults: 8 \n");
-    fprintf (stderr, "\t -a INT: number of cores to be used for computation : Defaults: 0, ie. all available cores will be used\n");
-	fprintf (stderr, "\t -h prints this message and exit\n");
+    int x=lcp(_graph.toString(abar),_graph.toString(b));
     
     
-	exit(0);
-}
-
-
-int main (int argc, char* argv[])
-{
-    std::cout.setf(std::ios::unitbuf); // avoids the buffer on the cout.
-
-
-    char* graphFile = NULL;
-    int tolerance_rc= 8;
-    int max_percentage = 80;
-    int local_complexity_threshold = 100;
-    size_t nb_cores(0);
-
-    char * output_file= NULL;
+    string new_u_str = _graph.toString(u).substr(0, _kmerSize-x);
+    string new_ubar_str = _graph.toString(ubar).substr(x, _kmerSize-x);
+    string new_v_str = _graph.toString(v).substr(x, _kmerSize-x);
+    string new_vbar_str = _graph.toString(vbar).substr(0, _kmerSize-x);
     
-    // dealing with options
-    while (1)
-	{
-        int witness = getopt (argc, argv, "hr:i:o:m:c:a:");
-		if (witness == -1){
-			break;
-		}
-		switch (witness)
-		{
-            case 'i':
-                graphFile=strdup(optarg);
-                break;
-            case 'o':
-                output_file=strdup(optarg);
-                printf("will output results in %s\n", output_file);
-                break;
-            case 'm':
-                max_percentage=atoi(optarg);
-                break;
-            case 'h':
-                print_usage_and_exit(argv[0]);
-                break;
-            case 'r':
-                tolerance_rc=atoi(optarg);
-                break;
-            case 'c':
-                local_complexity_threshold=atoi(optarg);
-                break;
-            case 'a':
-            	nb_cores=atoi(optarg);
-            	break;
-            default:
-                printf ("Unknown option %c\n", witness);
-                print_usage_and_exit(argv[0]);
-		}
-	}
+    strings[0]=_graph.toString(a)+new_u_str; // 0
+    strings[0]=strings[0].substr(1,strings[0].length()-2);
     
-    if(graphFile == NULL){
-        fprintf(stderr," Detected error: you must provide an input graph file \n");
-        print_usage_and_exit(argv[0]);
+    strings[1]=new_ubar_str+_graph.toString(abar); // 1
+    strings[1]=strings[1].substr(1,strings[1].length()-2);
+    
+    strings[2]=new_v_str+_graph.toString(b); // 2
+    strings[2]=strings[2].substr(1,strings[2].length()-2);
+    
+    strings[3]=_graph.toString(bbar)+new_vbar_str; // 3
+    strings[3]=strings[3].substr(1,strings[3].length()-2);
+    
+    strings[4]=_graph.toString(a)+new_vbar_str; // 0bis
+    strings[4]=strings[4].substr(1,strings[4].length()-2);
+    
+    strings[5]=new_ubar_str+_graph.toString(b); // 1bis
+    strings[5]=strings[5].substr(1,strings[5].length()-2);
+    
+    strings[6]=new_v_str+_graph.toString(abar); // 2bis
+    strings[6]=strings[6].substr(1,strings[6].length()-2);
+    
+    strings[7]=_graph.toString(bbar)+new_u_str; // 3bis
+    strings[7]=strings[7].substr(1,strings[7].length()-2);
+    
+    int min = which_min_8(strings);
+    
+    //    cout<<" min = "<<min<<" (x= "<<x<<")"<<endl;
+    //    cout<<strings[0]<<endl;
+    //        cout<<strings[1]<<endl;
+    //        cout<<strings[2]<<endl;
+    //        cout<<strings[3]<<endl;
+    //        cout<<strings[4]<<endl;
+    //        cout<<strings[5]<<endl;
+    //        cout<<strings[6]<<endl;
+    //        cout<<strings[7]<<endl;
+    switch (min) {
+        case 0:
+            // fasta mode (not removing first and last letters):
+            //            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[0].c_str(), strings[2].c_str(), strings[4].c_str(), strings[5].c_str());
+            
+            // r2sv mode: (allows the sort -u)
+            // Prints au vb av' u'b
+            // 1/ removing the first character of au and av' and last character of vb and u'b
+            // 2/ only if x==0, removing the last character of au and av' and the first character of vb and u'b (else, if x>0, it was already removed)
+            //            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+            //                    x>0?strings[0].substr(1).c_str():strings[0].substr(1,strings[0].length()-1).c_str(), // au, removing first character and maybe last
+            //                    x>0?strings[2].substr(0,strings[2].length()-1).c_str():strings[2].substr(1,strings[2].length()-1).c_str(), // vb, maybe removeing first and removeing last
+            //                    x>0?strings[4].substr(1).c_str():strings[4].substr(1,strings[4].length()-1).c_str(), // av' removing first character and maybe last
+            //                    x>0?strings[5].substr(0,strings[5].length()-1).c_str():strings[5].substr(1,strings[5].length()-1).c_str()); // vb, maybe removeing first and removeing last
+            
+            
+            // r2sv mode: (allows the sort -u)
+            // Prints au vb av' u'b
+            // removing the first and last character of au and av' and first and last character of vb and u'b
+            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[0].c_str(),  // au removing first and  last
+                    strings[2].c_str(),  // vb removing first and  last
+                    strings[4].c_str(),  // av' removing first and  last
+                    strings[5].c_str()); // v'b, removing first and  last
+            
+            output=true;
+            break;
+            
+        case 4:
+            
+            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[4].c_str(),  // av' removing first and  last
+                    strings[5].c_str(),  // vb  removing first and  last
+                    strings[0].c_str(),  // au  removing first and  last
+                    strings[2].c_str()); // vb  removing first and  last
+            
+            output=true;
+            break;
+            
+            // Commented all this code, that is useless.
+#ifndef only_canonical
+        case 1:
+            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[1].c_str(),  // av' removing first and  last
+                    strings[3].c_str(),  // vb  removing first and  last
+                    strings[5].c_str(),  // au  removing first and  last
+                    strings[4].c_str()); // vb  removing first and  last
+            
+            output=true;
+            break;
+            
+        case 2:
+            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[2].c_str(),  // av' removing first and  last
+                    strings[0].c_str(),  // vb  removing first and  last
+                    strings[6].c_str(),  // au  removing first and  last
+                    strings[7].c_str()); // vb  removing first and  last
+            
+            output=true;
+            break;
+            
+            
+        case 3:
+            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[3].c_str(),  // av' removing first and  last
+                    strings[1].c_str(),  // vb  removing first and  last
+                    strings[7].c_str(),  // au  removing first and  last
+                    strings[6].c_str()); // vb  removing first and  last
+            
+            output=true;
+            break;
+            
+        case 5:
+            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[5].c_str(),  // av' removing first and  last
+                    strings[4].c_str(),  // vb  removing first and  last
+                    strings[1].c_str(),  // au  removing first and  last
+                    strings[3].c_str()); // vb  removing first and  last
+            
+            output=true;
+            break;
+            
+        case 6:
+            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[6].c_str(),  // av' removing first and  last
+                    strings[7].c_str(),  // vb  removing first and  last
+                    strings[2].c_str(),  // au  removing first and  last
+                    strings[0].c_str()); // vb  removing first and  last
+            
+            output=true;
+            break;
+            
+        case 7:
+            fprintf(out, "au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[7].c_str(),  // av' removing first and  last
+                    strings[6].c_str(),  // vb  removing first and  last
+                    strings[3].c_str(),  // au  removing first and  last
+                    strings[1].c_str()); // vb  removing first and  last
+            
+            output=true;
+            break;
+            
+#endif //not only_canonical
     }
     
+    //        case 1:
+    //            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[1].c_str(), strings[3].c_str(), strings[5].c_str(), strings[4].c_str());
+    //
+    ////            cout<<strings[1]<<" "<<strings[3]<<" "<<strings[5]<<" "<<strings[4]<<endl;
+    //            output=true;
+    //            break;
+    //        case 2:
+    //            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[2].c_str(), strings[0].c_str(), strings[6].c_str(), strings[7].c_str());
+    //
+    ////            cout<<strings[2]<<" "<<strings[0]<<" "<<strings[6]<<" "<<strings[7]<<endl;
+    //            output=true;
+    //            break;
+    //        case 3:
+    //            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[3].c_str(), strings[1].c_str(), strings[7].c_str(), strings[6].c_str());
+    //
+    //
+    //
+    ////            cout<<strings[3]<<" "<<strings[1]<<" "<<strings[7]<<" "<<strings[6]<<endl;
+    //            output=true;
+    //            break;
+    //
+    //        case 5:
+    //            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[5].c_str(), strings[4].c_str(), strings[1].c_str(), strings[3].c_str());
+    //
+    ////            cout<<strings[5]<<" "<<strings[4]<<" "<<strings[1]<<" "<<strings[3]<<endl;
+    //            output=true;
+    //            break;
+    //        case 6:
+    //            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[6].c_str(), strings[7].c_str(), strings[2].c_str(), strings[0].c_str());
+    //
+    ////            cout<<strings[6], strings[7]<<" "<<strings[2]<<" "<<strings[0]<<endl;
+    //            output=true;
+    //            break;
+    //        case 7:
+    //            fprintf(out, ">inv_%d au\n%s\n>vb\n%s\n>av'\n%s\n>u'b\n%s\n", number_inv_found, strings[7].c_str(), strings[6].c_str(), strings[3].c_str(), strings[1].c_str());
+    //
+    ////            cout<<strings[7], strings[6]<<" "<<strings[3]<<" "<<strings[1]<<endl;
+    //            output=true;
+    //            break;        default:
+    //            break;
     
-    
-    Read2SV read2sv(graphFile, tolerance_rc);
-    read2sv.nbCores=nb_cores;
-    
-
-    if(tolerance_rc>read2sv._kmerSize-1){
-        tolerance_rc=read2sv._kmerSize-1;
-        fprintf(stderr," Warning : tolerence can't be bigger than k-2, set tolerence to k-1=%d \n", tolerance_rc);
+    if(output){
+        number_inv_found++;
+        //        delete[] strings;
+        return true;
     }
-    LCS lcs_instance(read2sv._kmerSize, max_percentage);
-    FILE * out;
-    if(output_file) out = fopen(output_file, "w");
-    else out=stdout;
-    if(out == NULL){
-        fprintf(stderr," Cannot open file %s for writting \n", output_file);
-        exit(1);
-    }
-    
-    read2sv.find_ALL_occurrences_of_inversion_pattern(lcs_instance, out, local_complexity_threshold);
-    fclose(out);
-    
-    
-    
-    return EXIT_SUCCESS;
-    
-  
+    return false;
 }
 
-
+// Returns the canonical string of an occurence (4 sequences of size at most 2k-2 each)
+// no longer used, see Solution TakeABreak::get_canonical(...)
+string TakeABreak::get_canonical(const Node& a, const Node& u, const Node& v, const Node& b){
+    string strings[8];
+    char canon[512];
+    //LocalSynchronizer local(synchro);
+    
+    Node abar=_graph.reverse(a);
+    Node bbar=_graph.reverse(b);
+    Node ubar=_graph.reverse(u);
+    Node vbar=_graph.reverse(v);
+    
+    
+    int x=lcp(_graph.toString(abar),_graph.toString(b));
+    
+    
+    string new_u_str = _graph.toString(u).substr(0, _kmerSize-x);
+    string new_ubar_str = _graph.toString(ubar).substr(x, _kmerSize-x);
+    string new_v_str = _graph.toString(v).substr(x, _kmerSize-x);
+    string new_vbar_str = _graph.toString(vbar).substr(0, _kmerSize-x);
+    
+    strings[0]=_graph.toString(a)+new_u_str; // 0
+    strings[0]=strings[0].substr(1,strings[0].length()-2);
+    
+    strings[1]=new_ubar_str+_graph.toString(abar); // 1
+    strings[1]=strings[1].substr(1,strings[1].length()-2);
+    
+    strings[2]=new_v_str+_graph.toString(b); // 2
+    strings[2]=strings[2].substr(1,strings[2].length()-2);
+    
+    strings[3]=_graph.toString(bbar)+new_vbar_str; // 3
+    strings[3]=strings[3].substr(1,strings[3].length()-2);
+    
+    strings[4]=_graph.toString(a)+new_vbar_str; // 0bis
+    strings[4]=strings[4].substr(1,strings[4].length()-2);
+    
+    strings[5]=new_ubar_str+_graph.toString(b); // 1bis
+    strings[5]=strings[5].substr(1,strings[5].length()-2);
+    
+    strings[6]=new_v_str+_graph.toString(abar); // 2bis
+    strings[6]=strings[6].substr(1,strings[6].length()-2);
+    
+    strings[7]=_graph.toString(bbar)+new_u_str; // 3bis
+    strings[7]=strings[7].substr(1,strings[7].length()-2);
+    
+    int min = which_min_8(strings);
+    
+    switch (min) {
+        case 0:
+            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[0].c_str(),  // au removing first and  last
+                    strings[2].c_str(),  // vb removing first and  last
+                    strings[4].c_str(),  // av' removing first and  last
+                    strings[5].c_str()); // v'b, removing first and  last
+            break;
+            
+        case 4:
+            
+            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[4].c_str(),  // av' removing first and  last
+                    strings[5].c_str(),  // vb  removing first and  last
+                    strings[0].c_str(),  // au  removing first and  last
+                    strings[2].c_str()); // vb  removing first and  last
+            break;
+            
+        case 1:
+            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[1].c_str(),  // av' removing first and  last
+                    strings[3].c_str(),  // vb  removing first and  last
+                    strings[5].c_str(),  // au  removing first and  last
+                    strings[4].c_str()); // vb  removing first and  last
+            break;
+            
+        case 2:
+            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[2].c_str(),  // av' removing first and  last
+                    strings[0].c_str(),  // vb  removing first and  last
+                    strings[6].c_str(),  // au  removing first and  last
+                    strings[7].c_str()); // vb  removing first and  last
+            break;
+            
+            
+        case 3:
+            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[3].c_str(),  // av' removing first and  last
+                    strings[1].c_str(),  // vb  removing first and  last
+                    strings[7].c_str(),  // au  removing first and  last
+                    strings[6].c_str()); // vb  removing first and  last
+            break;
+            
+        case 5:
+            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[5].c_str(),  // av' removing first and  last
+                    strings[4].c_str(),  // vb  removing first and  last
+                    strings[1].c_str(),  // au  removing first and  last
+                    strings[3].c_str()); // vb  removing first and  last
+            break;
+            
+        case 6:
+            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[6].c_str(),  // av' removing first and  last
+                    strings[7].c_str(),  // vb  removing first and  last
+                    strings[2].c_str(),  // au  removing first and  last
+                    strings[0].c_str()); // vb  removing first and  last
+            break;
+            
+        case 7:
+            sprintf(canon,"au;%s;>vb;%s;>av';%s;>u'b;%s\n",
+                    strings[7].c_str(),  // av' removing first and  last
+                    strings[6].c_str(),  // vb  removing first and  last
+                    strings[3].c_str(),  // au  removing first and  last
+                    strings[1].c_str()); // vb  removing first and  last
+            break;
+            
+    }
+    
+    return canon;
+}
 

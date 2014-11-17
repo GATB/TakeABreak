@@ -19,39 +19,27 @@
  *****************************************************************************/
 
 
-
-#ifndef TakeABreak_Solution_hpp
-#define TakeABreak_Solution_hpp
-
 #include <gatb/gatb_core.hpp>
-
-#include <string>
-#include <sstream>
-
+#include <TakeABreak.hpp>
 
 /********************************************************************************/
-/* Class Solution*/
+/* TakeABreak */
 /********************************************************************************/
-class Solution{
-public:
-    string _a;
-    string _u;
-    string _v;
-    string _b;
-    Solution(string a,string u,string v,string b);
-    Solution();
-    ~Solution();
+int main (int argc, char* argv[])
+{
     
-    void setSequences(string au,string vb);
-    
-    // Prints the solution in the output file as a multi-fasta
-    void writeFastaOutput(FILE * out, size_t id);
-    
-    // necessary to put several Solution objects in a set
-    bool operator< (const Solution& other) const;
-    
-private:
-    // Computes the reverse complement of a string
-    string reverseComplement(const string& dna);
-};
-#endif
+    // We use a try/catch block since GATB functions may throw exceptions
+    try
+    {
+        // We run our tool with the provided command line arguments.
+        // This will call the GraphTool::execute method we have defined.
+        TakeABreak().run (argc, argv);
+
+    }
+    catch (Exception& e)
+    {
+        std::cout << "EXCEPTION: " << e.getMessage() << std::endl;
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
+}

@@ -20,8 +20,8 @@
 
 
 
-#ifndef _READ2SV_HPP_
-#define _READ2SV_HPP_
+#ifndef _TAKEABREAK_HPP_
+#define _TAKEABREAK_HPP_
 
 /********************************************************************************/
 
@@ -33,45 +33,53 @@
 #include <LCS.hpp>
 #include <Solution.hpp>
 #include <set>
+using namespace std;
+
+static const char* STR_TOLERANCE_RC = "-repeat";
+static const char* STR_URI_GRAPH = "-graph";
+static const char* STR_LCT = "-lct";
+static const char* STR_MAX_SIM = "-max-sim";
+
 
 /********************************************************************************/
-/* Class Read2SV*/
+/* Class TakeABreak*/
 /********************************************************************************/
 
-class Read2SV : public Tool
+class TakeABreak : public Tool
 {
 //private:
 public:
 
-
-//    static const char* STRING_KMER_SIZE;
-//    static const char* STRING_URI_SOLID_KMERS;
-//    static const char* STRING_KMER_CFP;
-    size_t          _kmerSize;
+    
+    size_t _kmerSize;
     Graph _graph;
-    int size_tolerance_rc;
+    int _tolerance_rc;
+    int _max_sim;
+    int _LCT;
     float shannon_limit;
-    size_t nbCores;
-    //set<string> _sol;
+    size_t _nbCores;
     set<Solution> _solutions;
 	
 public:
 
     /** */
-    Read2SV (char* graphFile, const int size_tolerance_rc);
-    virtual ~Read2SV();
-    void find_ALL_occurrences_of_inversion_pattern (LCS& lcs_instance, FILE * out, const int& local_complexity_threshold);
+    TakeABreak ();
+    virtual ~TakeABreak();
+    void printParameters(FILE * log);
+    void find_ALL_occurrences_of_inversion_pattern (LCS& lcs_instance);
     bool checkPath (Node nodeV, Node nodeB);
     bool conserve_inversion(const Node& a, const Node& u, const Node& v, const Node& b);
     // the two sequences s1 and s2 are distinct enought (return true) if (s1[0:size_tolerance_rc] !=  s2[0:size_tolerance_rc])
     bool check_tolerance(const Node& s1, const Node& s2, const int size_tolerance_rc);
 	
 	
+    Solution get_canonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b);
+    size_t writeResults(FILE * out);
+    
+    //no longer used
     bool print_canonical(const Node& a, const Node& u, const Node& v, const Node& b, int& number_inv_found, FILE * out);
     string get_canonical(const Node& a, const Node& u, const Node& v, const Node& b);
-    Solution get_canonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b);
 
-    void writeResults(FILE * out);
     
     ISynchronizer* getSynchro(){return synchro;}
     
@@ -86,16 +94,13 @@ private:
      * so we go back to the old way with a functor coded as a struct. */
     struct MainLoopFunctor
     {
-        MainLoopFunctor (Read2SV& ref, ThreadObject<LCS>& lcs, int local_complexity_threshold, FILE* out, int& number_inv_found)
-            : ref(ref), lcs(lcs), local_complexity_threshold(local_complexity_threshold), number_inv_found(number_inv_found), out(out)  {}
+        MainLoopFunctor (TakeABreak& ref, ThreadObject<LCS>& lcs)
+            : ref(ref), lcs(lcs)  {}
 
         void operator() (Node& node);
 
-        Read2SV& ref;
+        TakeABreak& ref;
         ThreadObject<LCS>& lcs;
-        int local_complexity_threshold;
-        int& number_inv_found;
-        FILE* out;
     };
     
     friend struct MainLoopFunctor;
@@ -103,5 +108,5 @@ private:
 
 /********************************************************************************/
 
-#endif /* _READ2SV_HPP_ */
+#endif /* _TAKEABREAK_HPP_ */
 

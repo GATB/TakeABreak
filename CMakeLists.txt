@@ -62,7 +62,7 @@ include_directories (include ${gatb-core-includes})
 file (GLOB_RECURSE  ProjectFiles  src/*)
 
 # we define the artifact to be built: the project binary
-add_executable        (${PROJECT_NAME}  src/${PROJECT_NAME}.cpp ${ProjectFiles})
+add_executable        (${PROJECT_NAME}  src/main.cpp ${ProjectFiles})
 
 # we define which libraries to be linked with project binary
 target_link_libraries (${PROJECT_NAME}  ${gatb-core-libraries})
@@ -84,7 +84,6 @@ INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data          DESTINATION .)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc           DESTINATION .)
 INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/README        DESTINATION .)
 INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE       DESTINATION .)
-INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/TakeABreak.sh DESTINATION .)
 
 # For the source archive, we exclude some unwanted directories.
 SET (CPACK_SOURCE_IGNORE_FILES  ${CPACK_SOURCE_IGNORE_FILES} "/build*" "/encours*" "/distrib*"   "/tests*" "../../cmake/Delivery.cmake" "genere_distrib.sh"  ".gitignore$")

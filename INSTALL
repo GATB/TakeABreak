@@ -6,17 +6,11 @@ cd build
 cmake ..
 # Run the newly created makefile:
 make
-# Copy the created binaries in /usr/local/bin/:
-cp ext/gatb-core/bin/dbgh5 /usr/local/bin/
-cp TakeABreak /usr/local/bin/
 # Go back at the installation root directory
 cd .. 
-# Binaries that must be accessible in the PATH are :
-#  dbgh5 for constructing a de Bruijn graph from any number of read set(s) and
-#  TakeABreak that find the Inversion BreakPoints from the graph.
-# The TakeABreak.sh pipelines the two tools. Type for instance:
-sh ./TakeABreak.sh -i data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta
-#Try bash instead of sh above if sh does not work
+Type for instance:
+build/TakeABreak -in data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta
+
 
 # More details are in doc/user_manual_TakeABreak.txt 
  
