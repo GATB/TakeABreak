@@ -58,23 +58,53 @@ public:
     int _LCT;
     float shannon_limit;
     size_t _nbCores;
+    string _output_file;
+    string _log_file;
     set<Solution> _solutions;
+    set<Solution> _untruncSolutions; // only when PRINTALL is activated
+    size_t _nbOccurrences;
 	
 public:
 
     /** */
     TakeABreak ();
     virtual ~TakeABreak();
-    void printParameters(FILE * log);
+    
+    void printParameters(FILE * log); // no longer used
+    
+    /** fills getInfo() with parameters informations
+     */
+    void resumeParameters();
+    /** fills getInfo() with results informations
+     */
+    void resumeResults(size_t number_inv_found, double seconds);
+    
+    
+    /** Search for all occurrences of inversion by testing all starting branching nodes
+     */
     void find_ALL_occurrences_of_inversion_pattern (LCS& lcs_instance);
+    
+    /** Returns true if there exists a path in the graph from node v to node b
+     */
     bool checkPath (Node nodeV, Node nodeB);
+    
     bool conserve_inversion(const Node& a, const Node& u, const Node& v, const Node& b);
-    // the two sequences s1 and s2 are distinct enought (return true) if (s1[0:size_tolerance_rc] !=  s2[0:size_tolerance_rc])
+    // the two sequences s1 and s2 are distinct enough (return true) if (s1[0:size_tolerance_rc] !=  s2[0:size_tolerance_rc])
     bool check_tolerance(const Node& s1, const Node& s2, const int size_tolerance_rc);
 	
-	
+	/** Returns the canonical solution of the occurrence composed of the four nodes a, u, v and b
+     */
     Solution get_canonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b);
+    /** Writes in the file the set of canonical solutions
+     */
     size_t writeResults(FILE * out);
+    
+    /** Returns the canonical -untruncated- solution of the occurrence composed of the four nodes a, u, v and b
+     */
+    Solution get_untruncatedCanonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b);
+    /** Writes in the file the set of untruncated canonical solutions
+     */
+    size_t writeUntruncResults(FILE * out);
     
     //no longer used
     bool print_canonical(const Node& a, const Node& u, const Node& v, const Node& b, int& number_inv_found, FILE * out);

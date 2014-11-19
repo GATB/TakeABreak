@@ -50,6 +50,11 @@ include (GatbCore)
 # we get compilation definitions from the gatb-core part
 add_definitions (${gatb-core-flags})
 
+# we add a new compilation variable
+if (PRINTALL)
+SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DPRINTALL" )
+endif()
+
 #SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -pg" )
 
 # we give the headers directories from : 

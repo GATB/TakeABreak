@@ -38,7 +38,7 @@ int main (int argc, char* argv[])
     }
     catch (Exception& e)
     {
-        std::cout << "EXCEPTION: " << e.getMessage() << std::endl;
+        std::cerr << "ERROR: " << e.getMessage() << std::endl;
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

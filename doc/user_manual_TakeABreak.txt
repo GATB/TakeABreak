@@ -41,7 +41,7 @@ MANUAL
 		The breakpoint detection module takes as input the previously created de Bruijn graph (.h5 file). In addition its options are:
 			* -lct : the local complexity threshold, this limits the search, particularly in complex parts of the graph [default '100']. Warning : depending on the graph, increasing this parameter could lead to very long runtime.
 			* -max-sim : the max similarity percentage, inversions with a and b' (or u and v') whose longest common subsequence size is larger than k*(this value)/100 are discarded [default '80']. Warning : increasing this parameter may lead to numerous false positives (genomic approximate repeats).
-			* -repeat : the maximal repeat size at the breakpoint (ie. the longest common suffix size of u and reverse complement of v) [default '8']. To be fully effective, the -max-sim parameter should be fixed accordingly. (formerly called reverse tolerance)
+			* -repeat : the maximal repeat size at the breakpoint (ie. the longest common suffix size of a and reverse complement of b) [default '8']. To be fully effective, the -max-sim parameter should be fixed accordingly. (formerly called reverse tolerance)
 			
 	
 	D/ TakeABreak Output
