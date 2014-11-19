@@ -90,8 +90,8 @@ TakeABreak::TakeABreak () : Tool("TakeABreak"), _kmerSize(27), shannon_limit(1.7
     getParser()->push_front (new OptionOneParam (STR_TOLERANCE_RC, "maximal repeat size at the breakpoint (longest common suffix between a and b')", false, "8"));
     getParser()->push_front (new OptionOneParam (STR_MAX_SIM, "max similarity percentage between a and b' and between u and v'", false, "80"));
 
-    getParser()->push_front (new OptionOneParam (STR_KMER_SIZE, "size of a kmer", false, "31"));
     getParser()->push_front (new OptionOneParam (STR_KMER_ABUNDANCE, "abundance threshold for solid kmers", false, "3"));
+    getParser()->push_front (new OptionOneParam (STR_KMER_SIZE, "size of a kmer", false, "31"));
     getParser()->push_front (new OptionOneParam (STR_URI_OUTPUT, "prefix for output files", false, ""));
     getParser()->push_front (new OptionOneParam (STR_URI_GRAPH, "input graph file (likely a hdf5 file)",  false, ""));
     getParser()->push_front (new OptionOneParam (STR_URI_INPUT, "input read file(s)",  false, ""));
@@ -144,13 +144,11 @@ void TakeABreak::execute ()
     }
     if ((getInput()->get(STR_URI_GRAPH) != 0 && getInput()->get(STR_URI_INPUT) != 0) || (getInput()->get(STR_URI_GRAPH) == 0 && getInput()->get(STR_URI_INPUT) == 0))
     {
-        //cerr << "ERROR : options -graph and -in are incompatible, but at least one of these is mandatory" << endl;
         getParser()->displayHelp();
         throw Exception("options -graph and -in are incompatible, but at least one of these is mandatory");
     }
 
-    //char * output_file= NULL;
-    
+    // If outputPrefix is not provided we create one using the current date-time
     if (getInput()->get(STR_URI_OUTPUT) == 0)
     {
         time_t     now = time(0);
@@ -161,15 +159,12 @@ void TakeABreak::execute ()
         string outputPrefix="TakeABreak_Expe-"+string(buf);
 
         getInput()->add (0, STR_URI_OUTPUT, outputPrefix);
-        //getInput()->get(STR_URI_OUTPUT)->value="TakeABreak_Expe";
-        
-        //cout << getInput()->getStr(STR_URI_OUTPUT) << endl;
+
     }
     
     
-    //log file
-    _log_file=getInput()->getStr(STR_URI_OUTPUT)+".log";
-    FILE * log = fopen(_log_file.c_str(), "w");
+//    _log_file=getInput()->getStr(STR_URI_OUTPUT)+".log";
+//    FILE * log = fopen(_log_file.c_str(), "w");
 //    if(log != NULL){
 //        cout << "Log info are dumped in file " << _log_file << endl;
 //    }
@@ -180,23 +175,20 @@ void TakeABreak::execute ()
     // Case 1 : -in option, we create the graph from read files
     if (getInput()->get(STR_URI_INPUT) != 0)
     {
-        fprintf(log,"Creating the graph from file(s) %s\n",getInput()->getStr(STR_URI_INPUT).c_str());
+        //fprintf(log,"Creating the graph from file(s) %s\n",getInput()->getStr(STR_URI_INPUT).c_str());
         
         // We need to add the options of dbgh5/Graph that were masked to the user (or we could create a new Properties object)
-        //Properties graphInput;
-        
         getInput()->add(0,STR_BANK_CONVERT_TYPE,"tmp");
         getInput()->add(0,STR_URI_OUTPUT_DIR, ".");
         getInput()->add(0,STR_BLOOM_TYPE, "cache");
         getInput()->add(0,STR_DEBLOOM_TYPE, "cascading");
         getInput()->add(0,STR_BRANCHING_TYPE, "stored");
         getInput()->add(0,STR_MPHF_TYPE, "none");
-        getInput()->add(0,STR_URI_SOLID_KMERS, "");
+        //getInput()->add(0,STR_URI_SOLID_KMERS, ""); //surtout ne pas decommenter cette ligne, sinon les kmers solids sont stockes dans le fichier ./.h5 et les infos ne sont plus dans le output.h5
         
         //Warning if kmer size >128 cascading debloom does not work
         if(getInput()->getInt(STR_KMER_SIZE)>128){
             getInput()->get(STR_DEBLOOM_TYPE)->value="original";
-            //cout << getInput()->getStr(STR_DEBLOOM_TYPE)<< endl;
         }
         
         _graph = Graph::create (getInput());
@@ -207,17 +199,15 @@ void TakeABreak::execute ()
     // Case 2 : -graph option, we load the graph from a .h5 file
     if (getInput()->get(STR_URI_GRAPH) != 0)
     {
-        fprintf(log,"Loading the graph from file %s\n",getInput()->getStr(STR_URI_GRAPH).c_str());
+        //fprintf(log,"Loading the graph from file %s\n",getInput()->getStr(STR_URI_GRAPH).c_str());
+        
         _graph = Graph::load (getInput()->getStr(STR_URI_GRAPH));
         _kmerSize = _graph.getKmerSize();
-        //cout << _kmerSize << endl;
     }
     
-    //fprintf(log,"\n*******Graph info*******\n");
 //    stringstream infoGraph;
 //    infoGraph << _graph.getInfo();
 //    fprintf(log,"%s",infoGraph.str().c_str());
-//    fprintf(log,"-------------------------------------------------------------\n");
     
     
     _output_file=getInput()->getStr(STR_URI_OUTPUT)+".fasta";
@@ -248,7 +238,6 @@ void TakeABreak::execute ()
 
     time_t start = time(0);
     find_ALL_occurrences_of_inversion_pattern(lcs_instance);
-    //cout << "Nb occurrences found = " << _nbOccurrences << endl;
     size_t number_inv_found=writeResults(out);
     time_t end = time(0);
     fclose(out);
@@ -264,44 +253,21 @@ void TakeABreak::execute ()
 #endif
 
     double seconds=difftime(end,start);
-    //cout << "time spent=" << end - start << endl;
-//    fprintf(log,"Finding inversions took %.f seconds\n",seconds);
-//    fprintf(log,"%zi inversions were found\n",number_inv_found);
-//    fprintf(log,"Results are written in file %s\n",_output_file.c_str());
-    //cout<<number_inv_found<<" inversions were found, results in file "<< _output_file <<endl;
-    
     
     // Printing info on the run
     //getInfo()->get(getName())->value="done"; // par defaut une cle = getName() sans valeur
     getInfo()->add(1,"version",getVersion());
     resumeParameters();
     resumeResults(number_inv_found,seconds);
-    stringstream infoResults;
-    infoResults << *getInfo();
-    fprintf(log,"%s",infoResults.str().c_str());
-    fclose(log);
+    
+//    stringstream infoResults;
+//    infoResults << *getInfo();
+//    fprintf(log,"%s",infoResults.str().c_str());
+//    fclose(log);
 
 
 }
 
-//No longer used
-void TakeABreak::printParameters(FILE * log){
-    stringstream allParams;
-    allParams << "*******Parameter values*******" <<endl;
-    //allParams << "Output prefix: " << getInput()->getStr(STR_URI_OUTPUT) << endl;
-    allParams << "de Bruijn Graph: " << endl;
-    allParams << "\tk=" << _kmerSize << endl;
-    allParams << "\tmin abundance=" << _graph.getInfo().getStr(ATTR_KMER_ABUNDANCE) << endl;
-
-    allParams <<  "Inversion detection:" << endl;
-	allParams <<  "\trepeat=" << _tolerance_rc << endl;
-	allParams <<  "\tLCT=" << _LCT << endl;
-	allParams <<  "\tmax_sim="<< _max_sim << endl;
-    allParams <<  "*****************************" << endl;
-
-    fprintf(log,"%s",allParams.str().c_str());
-
-}
 
 void TakeABreak::resumeParameters(){
     
@@ -318,10 +284,10 @@ void TakeABreak::resumeParameters(){
     getInfo()->add(2,"kmer-size","%i", _kmerSize);
     getInfo()->add(2,"abundance",_graph.getInfo().getStr(ATTR_KMER_ABUNDANCE).c_str());
     try { // entour try/catch ici au cas ou le nom de la cle change dans gatb-core
-        getInfo()->add(2,"nb_solid_kmers",_graph.getInfo().getStr("kmers_nb_solids").c_str());
+        getInfo()->add(2,"nb_solid_kmers",_graph.getInfo().getStr("kmers_nb_solid").c_str());
         getInfo()->add(2,"nb_branching_nodes",_graph.getInfo().getStr("nb_branching").c_str());
     } catch (Exception e) {
-        // ne fait rien
+        // doing nothing
     }
     getInfo()->add(1,"Inversions");
     getInfo()->add(2,"repeat","%i", _tolerance_rc);
@@ -342,7 +308,7 @@ void TakeABreak::resumeResults(size_t number_inv_found, double seconds){
         getInfo()->add(2,"graph_file", "%s.h5",getInput()->getStr(STR_URI_OUTPUT).c_str());
     }
     getInfo()->add(2,"solution_file", "%s",_output_file.c_str());
-    getInfo()->add(2,"log_file", "%s",_log_file.c_str());
+    //getInfo()->add(2,"log_file", "%s",_log_file.c_str());
 
 }
 // dirty but efficient: declare
@@ -905,9 +871,28 @@ bool TakeABreak::checkPath (Node nodeV, Node nodeB)
 /********************************************************************************/
 // Old functions (no longer used)
 
+
+void TakeABreak::printParameters(FILE * log){
+    stringstream allParams;
+    allParams << "*******Parameter values*******" <<endl;
+    //allParams << "Output prefix: " << getInput()->getStr(STR_URI_OUTPUT) << endl;
+    allParams << "de Bruijn Graph: " << endl;
+    allParams << "\tk=" << _kmerSize << endl;
+    allParams << "\tmin abundance=" << _graph.getInfo().getStr(ATTR_KMER_ABUNDANCE) << endl;
+    
+    allParams <<  "Inversion detection:" << endl;
+	allParams <<  "\trepeat=" << _tolerance_rc << endl;
+	allParams <<  "\tLCT=" << _LCT << endl;
+	allParams <<  "\tmax_sim="<< _max_sim << endl;
+    allParams <<  "*****************************" << endl;
+    
+    fprintf(log,"%s",allParams.str().c_str());
+    
+}
+
+
 // prints directly in a file 4 sequences of size at most 2k-2 each
 // no longer used, see Solution TakeABreak::get_canonical(...)
-
 
 // 1: case without small repeats :
 // writing the canonical version:

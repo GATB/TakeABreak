@@ -34,7 +34,7 @@ MANUAL
 		
 	B/ de Bruijn graph creation options.
 		In addition to input read set(s), the de Bruijn graph creation uses two main parameters: 
-			* -kmer-size : the k-mer size [default '31']
+			* -kmer-size : the k-mer size [default '31']. To use k>128, you will need to re-compile with -Dk4=256 or 512, etc.
 			* -abundance : the abundance threshold, k-mers having less than this number of occurrences are discarded from the graph [default '3']
 	
 	B/ Breakpoint detection options.
@@ -46,16 +46,15 @@ MANUAL
 	
 	D/ TakeABreak Output
 		TakeABreak generates the following output files: 
-			* a graph file (.h5) 
+			* a graph file (.h5). This is a binary file, to obtain information stored in it, you can use the utility program ext/gatb-core/bin/dbginfo 
 			* a fasta file (.fasta) containing the canonical representations of the detected inversion breakpoints. Each inversion corresponds to 4 entries in the fasta file : the first two correspond to the breakpoint sequences (a-u,v-b) (canonical representation) that should be present in one genome and the last two are the corresponding breakpoint sequences in the other genome (a-revcomp(v),revcomp(u)-b).
-			* a log file (.log)
 		All the output results are prefixed either by a default name: "TakeABreak_Expe-[date:YY:MM:DD-HH:mm]" or by a user defined prefix (option -out of TakeABreak)
 	
-	E/ Computational resources related options :
-		Additionnal options are related to computational runtime and memory :
+	E/ Computational resources options :
+		Additional options are related to computational runtime and memory :
 		    * -nb-cores : number of cores to be used for computation (graph creation and breakpoint detection) [default '0', ie. all available cores will be used].
 			* -max-memory : max RAM memory for the graph creation (in MBytes)  [default '2000']. Increasing the memory will speed up the graph creation phase.
-    		* -max-disk : max usable disk space for the graph creation (in MBytes)  [default '0']. Kmers are counted by writting temporary files on the disk, to speed up the counting you can increase the usable disk space.
+    		* -max-disk : max usable disk space for the graph creation (in MBytes)  [default '0', ie. automatically set]. Kmers are counted by writting temporary files on the disk, to speed up the counting you can increase the usable disk space.
 		
  
 3/ Full example
@@ -63,7 +62,7 @@ This toy example can be run with the provided data.
 	A/ Example from raw input reads:
 		./TakeABreak -in data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta -out MyFirstTakeABreakExperiment
 	NOTE: the input read files are simply separated by comma without spaces.
-	This command line first computes the de Bruijn graph (saved in the file MyFirstTakeABreakExperiment.h5) before searching for the 6 artificial inversions contained in the input read sets and finally it outputs the inversion breakpoints in the file MyFirstTakeABreakExperiment.fasta. The log file MyFirstTakeABreakExperiment.log contains information about execution times, graph complexity and some numerical information about the results.
+	This command line first computes the de Bruijn graph (saved in the file MyFirstTakeABreakExperiment.h5) before searching for the 6 artificial inversions contained in the input read sets and finally it outputs the inversion breakpoints in the file MyFirstTakeABreakExperiment.fasta. 
 	
 	B/ Example from an already created de Bruijn graph (MyFirstTakeABreakExperiment.h5)
 		./TakeABreak -graph MyFirstTakeABreakExperiment.h5 -out MySecondTakeABreakExperiment

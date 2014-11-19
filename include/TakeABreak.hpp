@@ -59,7 +59,7 @@ public:
     float shannon_limit;
     size_t _nbCores;
     string _output_file;
-    string _log_file;
+    //string _log_file;
     set<Solution> _solutions;
     set<Solution> _untruncSolutions; // only when PRINTALL is activated
     size_t _nbOccurrences;
