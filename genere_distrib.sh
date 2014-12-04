@@ -16,5 +16,5 @@ cmake -DMAJOR=$1 -DMINOR=$2 -DPATCH=$3 ..
 make delivery
 
 ## Pour tester ce qu'il y a dans les archives avant d'envoyer sur la forge
-# make package
-# make package_source
+#make package
+#make package_source

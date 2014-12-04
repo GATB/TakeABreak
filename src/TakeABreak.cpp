@@ -180,9 +180,11 @@ void TakeABreak::execute ()
         // We need to add the options of dbgh5/Graph that were masked to the user (or we could create a new Properties object)
         getInput()->add(0,STR_BANK_CONVERT_TYPE,"tmp");
         getInput()->add(0,STR_URI_OUTPUT_DIR, ".");
-        getInput()->add(0,STR_BLOOM_TYPE, "cache");
+        getInput()->add(0,STR_BLOOM_TYPE, "neighbor"); //neighbor
         getInput()->add(0,STR_DEBLOOM_TYPE, "cascading");
+        getInput()->add(0,STR_DEBLOOM_IMPL, "minimizer"); //minimizer => STR_BLOOM_TYPE = neighbor
         getInput()->add(0,STR_BRANCHING_TYPE, "stored");
+        getInput()->add(0,STR_INTEGER_PRECISION, "0");
         getInput()->add(0,STR_MPHF_TYPE, "none");
         //getInput()->add(0,STR_URI_SOLID_KMERS, ""); //surtout ne pas decommenter cette ligne, sinon les kmers solids sont stockes dans le fichier ./.h5 et les infos ne sont plus dans le output.h5
         
@@ -253,10 +255,12 @@ void TakeABreak::execute ()
 #endif
 
     double seconds=difftime(end,start);
+    //cout << seconds << endl;
     
     // Printing info on the run
     //getInfo()->get(getName())->value="done"; // par defaut une cle = getName() sans valeur
     getInfo()->add(1,"version",getVersion());
+    getInfo()->add(1,"gatb-core-library",STR_LIBRARY_VERSION);
     resumeParameters();
     resumeResults(number_inv_found,seconds);
     
@@ -302,7 +306,7 @@ void TakeABreak::resumeResults(size_t number_inv_found, double seconds){
     getInfo()->add(0,"Results");
     getInfo()->add(1,"nb_occurrences", "%i",_nbOccurrences);
     getInfo()->add(1,"nb_distinct_solutions", "%i",number_inv_found);
-    getInfo()->add(1,"time", "%d s",seconds);
+    getInfo()->add(1,"time", "%.1f s",seconds);
     getInfo()->add(1,"output_files");
     if(getInput()->get(STR_URI_INPUT) != 0){
         getInfo()->add(2,"graph_file", "%s.h5",getInput()->getStr(STR_URI_OUTPUT).c_str());
@@ -536,7 +540,7 @@ size_t TakeABreak::writeResults(FILE * out)
     size_t count=0;
     while (!_solutions.empty()) {
         Solution sol=*_solutions.begin();
-        size_t res=sol.writeFastaOutput(out,count);
+        size_t res=sol.writeFastaBreakpoints(out,count);
         _solutions.erase(_solutions.begin());
         count=count+res;
     }
@@ -550,7 +554,8 @@ size_t TakeABreak::writeUntruncResults(FILE * out)
     size_t count=0;
     while (!_untruncSolutions.empty()) {
         Solution sol=*_untruncSolutions.begin();
-        size_t res=sol.writeFastaOutput(out,count);
+        size_t res=sol.writeFastaBreakpoints(out,count);
+        //size_t res=sol.writeFastaNodes(out,count); // here each fasta entry is the sequence of a node, not the concatenation as a breakpoint sequence
         _untruncSolutions.erase(_untruncSolutions.begin());
         count=count+res;
     }

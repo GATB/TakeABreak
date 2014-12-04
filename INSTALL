@@ -8,7 +8,7 @@ cmake ..
 make
 # Go back at the installation root directory
 cd .. 
-Type for instance:
+# Type for instance:
 build/TakeABreak -in data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta
 
 

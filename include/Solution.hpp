@@ -41,14 +41,20 @@ public:
     
     void setSequences(string au,string vb);
     
-    // Prints the solution in the output file as a multi-fasta
-    size_t writeFastaOutput(FILE * out, size_t id);
+    /** Prints the solution breakpoints in the output file as a multi-fasta
+     */
+    size_t writeFastaBreakpoints(FILE * out, size_t id);
+    
+    /** Prints the solution nodes in the output file as a multi-fasta
+     */
+    size_t writeFastaNodes(FILE * out, size_t id);
     
     // necessary to put several Solution objects in a set
     bool operator< (const Solution& other) const;
     
 private:
-    // Computes the reverse complement of a string
+    /** Computes the reverse complement of a string
+     */
     string reverseComplement(const string& dna);
 };
 #endif

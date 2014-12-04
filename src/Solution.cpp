@@ -45,7 +45,7 @@ bool Solution::operator< (const Solution& other) const  {
     return _auvb<other._auvb;
 }
 
-size_t Solution::writeFastaOutput(FILE * out, size_t id) {
+size_t Solution::writeFastaBreakpoints(FILE * out, size_t id) {
     if(_auvb.size()>0){
         size_t l=_auvb.size(); // should be even
         size_t l2=l/2;
@@ -70,6 +70,33 @@ size_t Solution::writeFastaOutput(FILE * out, size_t id) {
         return 0;
     }
 }
+
+size_t Solution::writeFastaNodes(FILE * out, size_t id) {
+    if(_auvb.size()>0){
+        size_t l=_auvb.size(); // should be even
+        size_t l2=l/2;
+        size_t lmin=l2/2;
+        size_t lmax=l2-lmin;
+        // the size of breakpoint sequences can be odd
+        //keeping a and b of length lmax, and u and v of length lmin
+        string a=_auvb.substr(0,lmax);
+        string u=_auvb.substr(lmax,lmin);
+        string v=_auvb.substr(l2,lmin);
+        string b=_auvb.substr(l2+lmin,lmax);
+        stringstream res;
+        res <<">inv_"<<id<<" a\n"<<a<<"\n";
+        res <<">u\n"<<u<<"\n";
+        res <<">v\n"<<v<<"\n";
+        res <<">b\n"<<b<<"\n";
+        
+        fprintf(out,"%s",res.str().c_str());
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}
+
 
 string Solution::reverseComplement(const string& dna) {
     
