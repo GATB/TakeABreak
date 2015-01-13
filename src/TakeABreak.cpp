@@ -90,7 +90,9 @@ TakeABreak::TakeABreak () : Tool("TakeABreak"), _kmerSize(27), shannon_limit(1.7
     getParser()->push_front (new OptionOneParam (STR_TOLERANCE_RC, "maximal repeat size at the breakpoint (longest common suffix between a and b')", false, "8"));
     getParser()->push_front (new OptionOneParam (STR_MAX_SIM, "max similarity percentage between a and b' and between u and v'", false, "80"));
 
-    getParser()->push_front (new OptionOneParam (STR_KMER_ABUNDANCE, "abundance threshold for solid kmers", false, "3"));
+    getParser()->push_front (new OptionOneParam (STR_SOLIDITY_KIND, "way to consider a solid kmer with several datasets (sum, min or max)", false, "sum"));
+    getParser()->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MAX, "maximal abundance threshold for solid kmers", false, "4294967295"));
+    getParser()->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MIN, "minimal abundance threshold for solid kmers", false, "3"));
     getParser()->push_front (new OptionOneParam (STR_KMER_SIZE, "size of a kmer", false, "31"));
     getParser()->push_front (new OptionOneParam (STR_URI_OUTPUT, "prefix for output files", false, ""));
     getParser()->push_front (new OptionOneParam (STR_URI_GRAPH, "input graph file (likely a hdf5 file)",  false, ""));
@@ -286,8 +288,10 @@ void TakeABreak::resumeParameters(){
     }
     getInfo()->add(1,"Graph");
     getInfo()->add(2,"kmer-size","%i", _kmerSize);
-    getInfo()->add(2,"abundance",_graph.getInfo().getStr(ATTR_KMER_ABUNDANCE).c_str());
     try { // entour try/catch ici au cas ou le nom de la cle change dans gatb-core
+        getInfo()->add(2,"abundance_min",_graph.getInfo().getStr("abundance_min").c_str());
+        getInfo()->add(2,"abundance_max",_graph.getInfo().getStr("abundance_max").c_str());
+        getInfo()->add(2,"solidity_kind",_graph.getInfo().getStr("solidity_kind").c_str());
         getInfo()->add(2,"nb_solid_kmers",_graph.getInfo().getStr("kmers_nb_solid").c_str());
         getInfo()->add(2,"nb_branching_nodes",_graph.getInfo().getStr("nb_branching").c_str());
     } catch (Exception e) {

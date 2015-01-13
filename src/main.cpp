@@ -36,6 +36,7 @@ int main (int argc, char* argv[])
         TakeABreak().run (argc, argv);
 
     }
+    
     catch (Exception& e)
     {
         std::cerr << "ERROR: " << e.getMessage() << std::endl;
