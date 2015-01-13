@@ -1,0 +1,21 @@
+TakeABreak                              
+    version                                  : 1.1.0
+    gatb-core-library                        : 1.1.0
+Parameters                              
+    Input data                              
+        Graph                                    : newtests/test1.h5
+    Graph                                   
+        kmer-size                                : 31
+        abundance                                : 3
+        nb_solid_kmers                           : 1319
+        nb_branching_nodes                       : 26
+    Inversions                              
+        repeat                                   : 8
+        max_sim                                  : 80
+        LCT                                      : 100
+Results                                 
+    nb_occurrences                           : 24
+    nb_distinct_solutions                    : 6
+    time                                     : 0.0 s
+    output_files                            
+        solution_file                            : newtests/test2.fasta

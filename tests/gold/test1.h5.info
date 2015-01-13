@@ -1,0 +1,78 @@
+graph                                   
+    gatb-core-library                        :     
+        version                                  : 1.1.0
+        build_date                               : 2015-01-13 14:14:18
+        build_system                             : Darwin-12.5.0
+        build_compiler                           : /usr/bin/cc  (4.1.0)
+        build_kmer_size                          : 32 64 96 256
+    dsk                                      :     
+        config                                   :        
+            bank_uri                                 : ../data/toy_example_reads.fasta,../data/toy_example_with_inv_reads.fasta
+            bank_size                                : 141259
+            kmer_size                                : 31
+            mini_size                                : 8
+            abundance                                : 3
+            available_space                          : 8899425
+            sequence_number                          : 800
+            sequence_volume                          : 0
+            kmers_number                             : 56000
+            kmers_volume                             : 1
+            max_disk_space                           : 10000
+            max_memory                               : 2000
+            nb_passes                                : 1
+            nb_partitions                            : 32
+            nb_bits_per_kmer                         : 64
+            nb_cores                                 : 4
+            partition_type                           : 0
+            nb_cores_per_partition                   : 1
+            nb_partitions_in_parallel                : 4
+        stats                                    :        
+            kmers_nb_distinct                        : 3276
+            kmers_nb_solid                           : 1319
+            kmers_nb_weak                            : 1957
+            kmers_percent_weak                       : 59.7
+            partitions                               :           
+                nb_partitions                            : 32
+                nb_items                                 : 1319
+                part_biggest                             : 71
+                part_smallest                            : 22
+                part_mean                                : 41.2
+                cmd                                      : hash:0 vector:32
+            fillsolid_time                           : 0.010          
+                1.read                                   : 0.005
+                2.sort                                   : 0.003
+                3.dump                                   : 0.002
+        time                                     : 0.106       
+            fill_partitions                          : 0.037
+            fill_solid_kmers                         : 0.069
+    bloom                                    :     
+        stats                                    :        
+            kind                                     : neighbor
+            bitsize                                  : 7959
+            nb_hash                                  : 4
+            nbits_per_kmer                           : 6.034370
+        time                                     : 0.000       
+            build_from_kmers                         : 0.000
+    debloom                                  :     
+        stats                                    :        
+            kind                                     : cascading
+            impl                                     : DebloomMinimizerAlgorithm
+            bitsize                                  : 9967
+            nbits_per_kmer                           : 7.556482
+            cfp                                      : 2008          
+                bloom2                                   : 1478
+                bloom3                                   : 446
+                bloom4                                   : 84
+                set                                      : 0
+                nb                                       : 245
+        time                                     : 0.084       
+            cascading                                : 0.006
+            fill_debloom_file                        : 0.069
+            finalize_debloom_file                    : 0.009
+    branching                                :     
+        stats                                    :        
+            nb_branching                             : 26
+            percentage                               : 2.0
+            checksum_branching                       : 17ac65b3b6406bcb
+        time                                     :        
+            build                                    : 0.006
