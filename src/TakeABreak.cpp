@@ -146,8 +146,7 @@ void TakeABreak::execute ()
     }
     if ((getInput()->get(STR_URI_GRAPH) != 0 && getInput()->get(STR_URI_INPUT) != 0) || (getInput()->get(STR_URI_GRAPH) == 0 && getInput()->get(STR_URI_INPUT) == 0))
     {
-        getParser()->displayHelp();
-        throw Exception("options -graph and -in are incompatible, but at least one of these is mandatory");
+        throw OptionFailure(getParser(), "options -graph and -in are incompatible, but at least one of these is mandatory");
     }
 
     // If outputPrefix is not provided we create one using the current date-time
