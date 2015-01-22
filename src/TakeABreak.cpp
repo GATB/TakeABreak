@@ -67,7 +67,7 @@ char * getVersion(){
 ** RETURN  :
 ** REMARKS :
 *********************************************************************/
-TakeABreak::TakeABreak () : Tool("TakeABreak"), _kmerSize(27), shannon_limit(1.7)
+TakeABreak::TakeABreak () : Tool("TakeABreak"), _kmerSize(27), shannon_limit(1.7), synchro(0)
 {
 
     /* Commented this until there is a function hide() for parser
@@ -125,7 +125,7 @@ TakeABreak::TakeABreak () : Tool("TakeABreak"), _kmerSize(27), shannon_limit(1.7
 *********************************************************************/
 TakeABreak::~TakeABreak ()
 {
-    delete synchro;
+    if (synchro)  { delete synchro; }
 }
 
 /*********************************************************************

@@ -36,7 +36,6 @@
 using namespace std;
 
 static const char* STR_TOLERANCE_RC = "-repeat";
-static const char* STR_URI_GRAPH = "-graph";
 static const char* STR_LCT = "-lct";
 static const char* STR_MAX_SIM = "-max-sim";
 
