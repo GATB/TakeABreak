@@ -77,27 +77,72 @@ TakeABreak::TakeABreak () : Tool("TakeABreak"), _kmerSize(27), shannon_limit(1.7
     //OptionsParser parser = Graph::getOptionsParser(false);
     //getParser()->add (parser);
      */
-    
-    // Here getParser() has already the options inherited from Tool : nb-cores, verbose et help
-    // push_front options, in the order of more and more importance
-    getParser()->push_back (new OptionNoParam (STR_VERSION, "version", false));
-    
-    // from Graph.cpp
-    getParser()->push_front (new OptionOneParam (STR_MAX_MEMORY, "max memory (in MBytes)", false, "2000"));
-    getParser()->push_front (new OptionOneParam (STR_MAX_DISK, "max disk   (in MBytes)", false, "0"));
-    
-    getParser()->push_front (new OptionOneParam (STR_LCT, "local complexity threshold (LCT)", false, "100"));
-    getParser()->push_front (new OptionOneParam (STR_TOLERANCE_RC, "maximal repeat size at the breakpoint (longest common suffix between a and b')", false, "8"));
-    getParser()->push_front (new OptionOneParam (STR_MAX_SIM, "max similarity percentage between a and b' and between u and v'", false, "80"));
+	//getParser()->push_back (Graph::getOptionsParser(false),0);
 
-    getParser()->push_front (new OptionOneParam (STR_SOLIDITY_KIND, "way to consider a solid kmer with several datasets (sum, min or max)", false, "sum"));
-    getParser()->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MAX, "maximal abundance threshold for solid kmers", false, "4294967295"));
-    getParser()->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MIN, "minimal abundance threshold for solid kmers", false, "3"));
-    getParser()->push_front (new OptionOneParam (STR_KMER_SIZE, "size of a kmer", false, "31"));
-    getParser()->push_front (new OptionOneParam (STR_URI_OUTPUT, "prefix for output files", false, ""));
-    getParser()->push_front (new OptionOneParam (STR_URI_GRAPH, "input graph file (likely a hdf5 file)",  false, ""));
-    getParser()->push_front (new OptionOneParam (STR_URI_INPUT, "input read file(s)",  false, ""));
-    
+//	IOptionsParser* generalParser = getParser();
+//	generalParser->setName("general");
+	IOptionsParser* generalParser = new OptionsParser("General");
+	generalParser->push_back (new OptionNoParam (STR_HELP, "help", false));
+	generalParser->push_back (new OptionNoParam (STR_VERSION, "version", false));
+	generalParser->push_back (new OptionOneParam (STR_NB_CORES,    "number of cores",      false, "0"  ));
+	generalParser->push_back (new OptionOneParam (STR_VERBOSE,     "verbosity level",      false, "1"  ));
+//
+	setParser (new OptionsParser ("TakeABreak"));
+
+	IOptionsParser* inputParser = new OptionsParser("Input / output");
+	inputParser->push_front (new OptionOneParam (STR_URI_OUTPUT, "prefix for output files", false, ""));
+	inputParser->push_front (new OptionOneParam (STR_URI_GRAPH, "input graph file (likely a hdf5 file)",  false, ""));
+	inputParser->push_front (new OptionOneParam (STR_URI_INPUT, "input read file(s)",  false, ""));
+
+	IOptionsParser* inversionParser = new OptionsParser("Inversion");
+	inversionParser->push_front (new OptionOneParam (STR_LCT, "local complexity threshold (LCT)", false, "100"));
+	inversionParser->push_front (new OptionOneParam (STR_TOLERANCE_RC, "maximal repeat size at the breakpoint (longest common suffix between a and b')", false, "8"));
+	inversionParser->push_front (new OptionOneParam (STR_MAX_SIM, "max similarity percentage between a and b' and between u and v'", false, "80"));
+
+	IOptionsParser* graphParser = new OptionsParser("Graph");
+	graphParser->push_front (new OptionOneParam (STR_MAX_MEMORY, "max memory (in MBytes)", false, "2000"));
+	graphParser->push_front (new OptionOneParam (STR_MAX_DISK, "max disk   (in MBytes)", false, "0"));
+	graphParser->push_front (new OptionOneParam (STR_SOLIDITY_KIND, "way to consider a solid kmer with several datasets (sum, min or max)", false, "sum"));
+	graphParser->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MAX, "maximal abundance threshold for solid kmers", false, "4294967295"));
+	graphParser->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MIN, "minimal abundance threshold for solid kmers", false, "3"));
+	graphParser->push_front (new OptionOneParam (STR_KMER_SIZE, "size of a kmer", false, "31"));
+
+
+
+	getParser()->push_front(generalParser);
+	getParser()->push_front(inversionParser);
+	getParser()->push_front(graphParser);
+	getParser()->push_front(inputParser);
+
+	//OptionFailure(getParser(), "options -graph and -in are incompatible, but at least one of these is mandatory");
+
+//	IOptionsParser* graphParser = Graph::getOptionsParser(false);
+//
+//	if (IOptionsParser* generalParser = graphParser->getParser ("general"))  {  generalParser->setVisible(false);  }
+//	if (IOptionsParser* branchingParser = graphParser->getParser ("general"))  {  branchingParser->setVisible(false);  }
+//	if (IOptionsParser* inParser = graphParser->getParser (STR_URI_INPUT))  {  inParser->setVisible(false);  }
+//	if (IOptionsParser* inParser = graphParser->getParser (STR_URI_INPUT))  {  inParser->setVisible(false);  }
+
+	// Here getParser() has already the options inherited from Tool : nb-cores, verbose et help
+    // push_front options, in the order of more and more importance
+//    getParser()->push_back (new OptionNoParam (STR_VERSION, "version", false));
+//
+//    // from Graph.cpp
+//    getParser()->push_front (new OptionOneParam (STR_MAX_MEMORY, "max memory (in MBytes)", false, "2000"));
+//    getParser()->push_front (new OptionOneParam (STR_MAX_DISK, "max disk   (in MBytes)", false, "0"));
+//
+//    getParser()->push_front (new OptionOneParam (STR_LCT, "local complexity threshold (LCT)", false, "100"));
+//    getParser()->push_front (new OptionOneParam (STR_TOLERANCE_RC, "maximal repeat size at the breakpoint (longest common suffix between a and b')", false, "8"));
+//    getParser()->push_front (new OptionOneParam (STR_MAX_SIM, "max similarity percentage between a and b' and between u and v'", false, "80"));
+//
+//    getParser()->push_front (new OptionOneParam (STR_SOLIDITY_KIND, "way to consider a solid kmer with several datasets (sum, min or max)", false, "sum"));
+//    getParser()->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MAX, "maximal abundance threshold for solid kmers", false, "4294967295"));
+//    getParser()->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MIN, "minimal abundance threshold for solid kmers", false, "3"));
+//    getParser()->push_front (new OptionOneParam (STR_KMER_SIZE, "size of a kmer", false, "31"));
+//    getParser()->push_front (new OptionOneParam (STR_URI_OUTPUT, "prefix for output files", false, ""));
+//    getParser()->push_front (new OptionOneParam (STR_URI_GRAPH, "input graph file (likely a hdf5 file)",  false, ""));
+//    getParser()->push_front (new OptionOneParam (STR_URI_INPUT, "input read file(s)",  false, ""));
+//
     //remove unused options -- should be replaced by future function hide()
 //    getParser()->remove(STR_BLOOM_TYPE);
 //    getParser()->remove(STR_DEBLOOM_TYPE);
@@ -142,11 +187,19 @@ void TakeABreak::execute ()
     if (getInput()->get(STR_VERSION) != 0){
         cout << "TakeABreak version "<< getVersion() << " AGPL licence" <<endl;
         cout << "Using gatb-core version "<< STR_LIBRARY_VERSION << endl;
+//        cout<< Stringify::format ("* version %s (%s)\n* built on %s with compiler '%s'\n* supported kmer sizes %d %d %d %d",
+//                    gatb::core::system::impl::System::info().getVersion().c_str(),
+//                    gatb::core::system::impl::System::info().getBuildDate().c_str(),
+//                    gatb::core::system::impl::System::info().getBuildSystem().c_str(),
+//                    gatb::core::system::impl::System::info().getBuildCompiler().c_str(),
+//                    KSIZE_1, KSIZE_2, KSIZE_3, KSIZE_4
+//                    )
+//                    << endl;
         return;
     }
     if ((getInput()->get(STR_URI_GRAPH) != 0 && getInput()->get(STR_URI_INPUT) != 0) || (getInput()->get(STR_URI_GRAPH) == 0 && getInput()->get(STR_URI_INPUT) == 0))
     {
-        throw OptionFailure(getParser(), "options -graph and -in are incompatible, but at least one of these is mandatory");
+        throw OptionFailure(getParser(), "Error: options -graph and -in are incompatible, but at least one of these is mandatory");
     }
 
     // If outputPrefix is not provided we create one using the current date-time
