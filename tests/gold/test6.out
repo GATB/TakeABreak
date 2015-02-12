@@ -1,14 +1,16 @@
 TakeABreak                              
     version                                  : 1.1.0
-    gatb-core-library                        : 1.1.0
+    gatb-core-library                        : 1.0.6
 Parameters                              
     Input data                              
         Reads                                    : /Users/clemaitr/DATA/NGSdata/LbFV_raw_data/Varaldi_LbFV_TTCAGC_L001_R1_001.fastq
     Graph                                   
         kmer-size                                : 200
-        abundance                                : 300
-        nb_solid_kmers                           : 109372
-        nb_branching_nodes                       : 198
+        abundance_min                            : 300
+        abundance_max                            : 4294967295
+        solidity_kind                            : sum
+        nb_solid_kmers                           : 109373
+        nb_branching_nodes                       : 196
     Inversions                              
         repeat                                   : 8
         max_sim                                  : 80
@@ -16,7 +18,7 @@ Parameters
 Results                                 
     nb_occurrences                           : 0
     nb_distinct_solutions                    : 0
-    time                                     : 0.0 s
+    time                                     : 1.0 s
     output_files                            
         graph_file                               : newtests/test6.h5
         solution_file                            : newtests/test6.fasta

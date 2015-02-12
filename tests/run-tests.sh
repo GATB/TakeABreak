@@ -96,10 +96,18 @@ test3="test$num"
 
 ## evaluation
 dif=$(diff $outdir/$test3.fasta $gold/$test3.fasta | wc -l | grep -o "[0-9]\+")
-if [ "$dif" == "0" ]; then
-    echo "Test$num : PASS" >> $stats
+
+nb1=$(grep "nb_solid_kmers" $outdir/$test3.out | grep -o "[0-9]\+")
+nb2=$(grep "nb_branching_nodes" $outdir/$test3.out | grep -o "[0-9]\+")
+
+nbG1=$(grep "nb_solid_kmers" $gold/$test3.out | grep -o "[0-9]\+")
+nbG2=$(grep "nb_branching_nodes" $gold/$test3.out | grep -o "[0-9]\+")
+
+
+if [ "$dif" == "0" ] && [ "$nb1" == "$nbG1" ] && [ "$nb2" == "$nbG2" ]; then
+echo "Test$num : PASS" >> $stats
 else
-    echo "Test$num : FAILED result files differ" >> $stats
+echo "Test$num : FAILED different solutions or different nb of solid and branching ($nb1 vs $nbG1 solid and $nb2 vs $nbG2 branching)" >> $stats
 fi
 
 fi
@@ -153,7 +161,7 @@ nbG2=$(grep "nb_branching_nodes" $gold/$test5.out | grep -o "[0-9]\+")
 if [ "$dif" == "0" ] && [ "$nb1" == "$nbG1" ] && [ "$nb2" == "$nbG2" ]; then
     echo "Test$num : PASS" >> $stats
 else
-    echo "Test$num : FAILED solutions or different nb of solid and branching ($nb1 vs $nbG1 solid and $nb2 vs $nbG2 branching)" >> $stats
+    echo "Test$num : FAILED different solutions or different nb of solid and branching ($nb1 vs $nbG1 solid and $nb2 vs $nbG2 branching)" >> $stats
 fi
 
 fi

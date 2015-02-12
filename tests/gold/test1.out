@@ -1,12 +1,14 @@
 TakeABreak                              
     version                                  : 1.1.0
-    gatb-core-library                        : 1.1.0
+    gatb-core-library                        : 1.0.6
 Parameters                              
     Input data                              
         Reads                                    : ../data/toy_example_reads.fasta,../data/toy_example_with_inv_reads.fasta
     Graph                                   
         kmer-size                                : 31
-        abundance                                : 3
+        abundance_min                            : 3
+        abundance_max                            : 4294967295
+        solidity_kind                            : sum
         nb_solid_kmers                           : 1319
         nb_branching_nodes                       : 26
     Inversions                              

@@ -1,12 +1,14 @@
 TakeABreak                              
     version                                  : 1.1.0
-    gatb-core-library                        : 1.1.0
+    gatb-core-library                        : 1.0.6
 Parameters                              
     Input data                              
         Reads                                    : /Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new/humch22c_reads.fasta,/Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new/humch22c.inv_reads.fasta
     Graph                                   
         kmer-size                                : 31
-        abundance                                : 3
+        abundance_min                            : 3
+        abundance_max                            : 4294967295
+        solidity_kind                            : sum
         nb_solid_kmers                           : 31694953
         nb_branching_nodes                       : 421604
     Inversions                              
@@ -16,7 +18,7 @@ Parameters
 Results                                 
     nb_occurrences                           : 6421
     nb_distinct_solutions                    : 1128
-    time                                     : 84.0 s
+    time                                     : 85.0 s
     output_files                            
         graph_file                               : newtests/test3.h5
         solution_file                            : newtests/test3.fasta

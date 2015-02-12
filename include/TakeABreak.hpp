@@ -116,6 +116,7 @@ private:
     
     /** */
     void execute ();
+    void displayVersion(std::ostream& os);
     ISynchronizer* synchro;
     
     /** Functor called for each node.

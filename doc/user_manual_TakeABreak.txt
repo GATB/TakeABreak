@@ -35,7 +35,9 @@ TakeABreak now comes as a single executable, combining the de bruijn graph creat
 	B/ de Bruijn graph creation options.
 	In addition to input read set(s), the de Bruijn graph creation uses two main parameters: 
 		* -kmer-size : the k-mer size [default '31']. To use k>128, you will need to re-compile with -Dk4=256 or 512, etc.
-		* -abundance : the abundance threshold, k-mers having less than this number of occurrences are discarded from the graph [default '3']
+		* -abundance-min : the minimal abundance threshold, k-mers having less than this number of occurrences are discarded from the graph [default '3']
+		* -abundance-max : the maximal abundance threshold, k-mers having more than this number of occurrences are discarded from the graph [default '3']
+		* -solidity-kind : the way to consider a solid kmer with several datasets (sum, min or max) [default 'sum']. Details : with 'sum', a kmer is solid if the sum of its abundances in all input datasets respect the abundance-min and abundance-max conditions; with 'min' (resp. max) a kmer is solid if the minimal (resp. maximal) abundance among the datasets is in the interval [min-max]. This is almost equivalent to : with 'min' the kmer must be solid in all datasets, with 'max' the kmer must be solid in at least one dataset.
 	
 	B/ Breakpoint detection options.
 	The breakpoint detection module takes as input the previously created de Bruijn graph (.h5 file). In addition its options are:

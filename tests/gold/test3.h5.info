@@ -1,18 +1,19 @@
 graph                                   
     gatb-core-library                        :     
-        version                                  : 1.1.0
-        build_date                               : 2015-01-13 14:14:18
+        version                                  : 1.0.6
+        build_date                               : 2015-02-11 11:24:31
         build_system                             : Darwin-12.5.0
         build_compiler                           : /usr/bin/cc  (4.1.0)
-        build_kmer_size                          : 32 64 96 256
+        build_kmer_size                          : 32 64 96 128
+        custom_memalloc                          : 0
     dsk                                      :     
         config                                   :        
-            bank_uri                                 : /Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new/humch22c_reads.fasta,/Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new/humch22c.inv_reads.fasta
-            bank_size                                : 5189110264
             kmer_size                                : 31
             mini_size                                : 8
-            abundance                                : 3
-            available_space                          : 8898762
+            solidity_kind                            : sum
+            abundance_min                            : 3
+            abundance_max                            : 4294967295
+            available_space                          : 8380009
             sequence_number                          : 24748553
             sequence_volume                          : 2360
             kmers_number                             : 1732398873
@@ -24,35 +25,55 @@ graph
             nb_bits_per_kmer                         : 64
             nb_cores                                 : 4
             partition_type                           : 0
+            minimizer_type                           : lexicographic (kmc2 heuristic)
             nb_cores_per_partition                   : 1
             nb_partitions_in_parallel                : 4
+        bank                                     :        
+            bank_uri                                 : /Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new/humch22c_reads.fasta,/Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new/humch22c.inv_reads.fasta
+            bank_size                                : 5189110264
+            bank_total_nt                            : 2791563600
+            sequences                                :           
+                seq_number                               : 27915636
+                seq_size_min                             : 100
+                seq_size_max                             : 100
+                seq_size_mean                            : 100.0
+                seq_size_deviation                       : 0.0
+            kmers                                    :           
+                kmers_nb_valid                           : 1954094520
+                kmers_nb_invalid                         : 0
         stats                                    :        
-            kmers_nb_distinct                        : 88592760
-            kmers_nb_solid                           : 31694953
-            kmers_nb_weak                            : 56897807
-            kmers_percent_weak                       : 64.2
+            kmers                                    :           
+                kmers_nb_distinct                        : 88592760
+                kmers_nb_solid                           : 31694953
+                kmers_nb_weak                            : 56897807
+                kmers_percent_weak                       : 64.2
+            histogram                                :           
+                cutoff                                   : 3
+                nb_ge_cutoff                             : 0
+                percent_ge_cutoff                        : 0.0
+                first_peak                               : 0
             partitions                               :           
                 nb_partitions                            : 48
                 nb_items                                 : 31694953
-                part_biggest                             : 700912
-                part_smallest                            : 470224
+                part_biggest                             : 721325
+                part_smallest                            : 132655
                 part_mean                                : 660311.5
                 cmd                                      : hash:0 vector:48
-            fillsolid_time                           : 36.184          
-                1.read                                   : 14.160
-                2.sort                                   : 13.797
-                3.dump                                   : 8.227
-        time                                     : 77.680       
-            fill_partitions                          : 40.766
-            fill_solid_kmers                         : 36.914
+            fillsolid_time                           : 51.019          
+                1.read                                   : 16.700
+                2.sort                                   : 25.770
+                3.dump                                   : 8.549
+        time                                     : 93.853       
+            fill_partitions                          : 40.333
+            fill_solid_kmers                         : 53.520
     bloom                                    :     
         stats                                    :        
             kind                                     : neighbor
             bitsize                                  : 191259072
             nb_hash                                  : 4
             nbits_per_kmer                           : 6.034370
-        time                                     : 4.989       
-            build_from_kmers                         : 4.989
+        time                                     : 3.489       
+            build_from_kmers                         : 3.489
     debloom                                  :     
         stats                                    :        
             kind                                     : cascading
@@ -65,14 +86,14 @@ graph
                 bloom4                                   : 3630005
                 set                                      : 5771840
                 nb                                       : 10766150
-        time                                     : 13.975       
-            cascading                                : 2.722
-            fill_debloom_file                        : 10.299
-            finalize_debloom_file                    : 0.954
+        time                                     : 12.730       
+            cascading                                : 2.513
+            fill_debloom_file                        : 9.323
+            finalize_debloom_file                    : 0.894
     branching                                :     
         stats                                    :        
             nb_branching                             : 421604
             percentage                               : 1.3
             checksum_branching                       : 1b370d40d0ae77b0
         time                                     :        
-            build                                    : 15.314
+            build                                    : 15.119

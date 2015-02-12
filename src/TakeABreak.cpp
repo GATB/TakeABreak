@@ -52,7 +52,7 @@ using namespace std;
 // variable name is STR_LIBRARY_VERSION
 
 char * getVersion(){
-	return (char *)"1.1.0"; // TO UPDATE AT EACH RELEASE
+	return (char *)"1.1.1"; // TO UPDATE AT EACH RELEASE
     //return (char *)STR_LIBRARY_VERSION;
 }
 
@@ -181,22 +181,50 @@ TakeABreak::~TakeABreak ()
 ** RETURN  :
 ** REMARKS :
 *********************************************************************/
+void TakeABreak::displayVersion(std::ostream& os){
+
+	os << "* * * * * * * * * * * * * * * * * * * * * *" << endl;
+	os << "* TakeABreak version "<< getVersion() << "                *" << endl; //<< " AGPL licence" <<endl;
+	os << "* Using gatb-core version "<< STR_LIBRARY_VERSION <<  "           *" << endl;
+	os << "* Supported kmer sizes <" << KSIZE_1 <<" <" << KSIZE_2<<" <" << KSIZE_3<<" <" << KSIZE_4  << "   *" << endl;
+	os << "* * * * * * * * * * * * * * * * * * * * * *" << endl;
+	//os << "*********************************************************" << endl;
+
+
+	//os << "built " << gatb::core::system::impl::System::info().getBuildDate().c_str() << endl; // build date of gatb-core, not TakeABreak
+	//        cout<< Stringify::format ("* version %s (%s)\n* built on %s with compiler '%s'\n* supported kmer sizes %d %d %d %d",
+	//                    gatb::core::system::impl::System::info().getVersion().c_str(),
+	//                    gatb::core::system::impl::System::info().getBuildDate().c_str(),
+	//                    gatb::core::system::impl::System::info().getBuildSystem().c_str(),
+	//                    gatb::core::system::impl::System::info().getBuildCompiler().c_str(),
+	//                    KSIZE_1, KSIZE_2, KSIZE_3, KSIZE_4
+	//                    )
+	//                    << endl;
+}
+
+/*********************************************************************
+** METHOD  :
+** PURPOSE :
+** INPUT   :
+** OUTPUT  :
+** RETURN  :
+** REMARKS :
+*********************************************************************/
 void TakeABreak::execute ()
 {
 
-    if (getInput()->get(STR_VERSION) != 0){
-        cout << "TakeABreak version "<< getVersion() << " AGPL licence" <<endl;
-        cout << "Using gatb-core version "<< STR_LIBRARY_VERSION << endl;
-//        cout<< Stringify::format ("* version %s (%s)\n* built on %s with compiler '%s'\n* supported kmer sizes %d %d %d %d",
-//                    gatb::core::system::impl::System::info().getVersion().c_str(),
-//                    gatb::core::system::impl::System::info().getBuildDate().c_str(),
-//                    gatb::core::system::impl::System::info().getBuildSystem().c_str(),
-//                    gatb::core::system::impl::System::info().getBuildCompiler().c_str(),
-//                    KSIZE_1, KSIZE_2, KSIZE_3, KSIZE_4
-//                    )
-//                    << endl;
-        return;
-    }
+	//option VERSION is managed by Tool at the beginning of method run(), before calling execute()
+	// To customize the version message : override the method displayVersion()
+//    if (getInput()->get(STR_VERSION) != 0){
+//        cout << "TakeABreak version "<< getVersion() << " AGPL licence" <<endl;
+//        cout << "Using gatb-core version "<< STR_LIBRARY_VERSION << endl;
+//        return;
+//    }
+
+	if (getInput()->get(STR_HELP) != 0){
+		throw OptionFailure(getParser(), "");
+	}
+
     if ((getInput()->get(STR_URI_GRAPH) != 0 && getInput()->get(STR_URI_INPUT) != 0) || (getInput()->get(STR_URI_GRAPH) == 0 && getInput()->get(STR_URI_INPUT) == 0))
     {
         throw OptionFailure(getParser(), "Error: options -graph and -in are incompatible, but at least one of these is mandatory");
@@ -315,6 +343,7 @@ void TakeABreak::execute ()
     //getInfo()->get(getName())->value="done"; // par defaut une cle = getName() sans valeur
     getInfo()->add(1,"version",getVersion());
     getInfo()->add(1,"gatb-core-library",STR_LIBRARY_VERSION);
+    getInfo()->add(1,"supported_kmer_sizes","<%d <%d <%d <%d",KSIZE_1, KSIZE_2, KSIZE_3, KSIZE_4);
     resumeParameters();
     resumeResults(number_inv_found,seconds);
     
@@ -868,7 +897,7 @@ void TakeABreak::find_ALL_occurrences_of_inversion_pattern (LCS& lcsParam)
     Dispatcher dispatcher (_nbCores);
 
     /** We define an iterator over the branching nodes of the graph. We use also progress information. */
-    ProgressGraphIterator<BranchingNode, ProgressTimer> branchingNodes (_graph.iterator<BranchingNode>(), "looping nodes");
+    ProgressGraphIterator<BranchingNode, ProgressTimerAndSystem> branchingNodes (_graph.iterator<BranchingNode>(), "looping nodes");
     
     /** We use one LCS object per thread => this is done thanks to the ThreadObject class. */
     ThreadObject<LCS> lcs (lcsParam);
