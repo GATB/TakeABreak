@@ -100,13 +100,17 @@ TakeABreak::TakeABreak () : Tool("TakeABreak"), _kmerSize(27), shannon_limit(1.7
 	inversionParser->push_front (new OptionOneParam (STR_MAX_SIM, "max similarity percentage between a and b' and between u and v'", false, "80"));
 
 	IOptionsParser* graphParser = new OptionsParser("Graph");
+#if 0
 	graphParser->push_front (new OptionOneParam (STR_MAX_MEMORY, "max memory (in MBytes)", false, "2000"));
 	graphParser->push_front (new OptionOneParam (STR_MAX_DISK, "max disk   (in MBytes)", false, "0"));
 	graphParser->push_front (new OptionOneParam (STR_SOLIDITY_KIND, "way to consider a solid kmer with several datasets (sum, min or max)", false, "sum"));
 	graphParser->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MAX, "maximal abundance threshold for solid kmers", false, "4294967295"));
 	graphParser->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MIN, "minimal abundance threshold for solid kmers", false, "3"));
 	graphParser->push_front (new OptionOneParam (STR_KMER_SIZE, "size of a kmer", false, "31"));
-
+#else
+	// TEMPORARY ? some properties are needed by SortingCountAlgorithm and must be added to the OptionsParser (Exception otherwise)
+	graphParser->push_front (SortingCountAlgorithm<>::getOptionsParser(false));
+#endif
 
 
 	getParser()->push_front(generalParser);
