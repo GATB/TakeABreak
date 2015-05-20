@@ -190,7 +190,7 @@ void TakeABreak::displayVersion(std::ostream& os){
 	os << "* * * * * * * * * * * * * * * * * * * * * *" << endl;
 	os << "* TakeABreak version "<< getVersion() << "                *" << endl; //<< " AGPL licence" <<endl;
 	os << "* Using gatb-core version "<< STR_LIBRARY_VERSION <<  "           *" << endl;
-	os << "* Supported kmer sizes <" << KSIZE_1 <<" <" << KSIZE_2<<" <" << KSIZE_3<<" <" << KSIZE_4  << "   *" << endl;
+	os << "* Supported kmer sizes <" << KSIZE_STRING << "   *" << endl;
 	os << "* * * * * * * * * * * * * * * * * * * * * *" << endl;
 	//os << "*********************************************************" << endl;
 
@@ -347,7 +347,7 @@ void TakeABreak::execute ()
     //getInfo()->get(getName())->value="done"; // par defaut une cle = getName() sans valeur
     getInfo()->add(1,"version",getVersion());
     getInfo()->add(1,"gatb-core-library",STR_LIBRARY_VERSION);
-    getInfo()->add(1,"supported_kmer_sizes","<%d <%d <%d <%d",KSIZE_1, KSIZE_2, KSIZE_3, KSIZE_4);
+    getInfo()->add(1,"supported_kmer_sizes","%s", KSIZE_STRING);
     resumeParameters();
     resumeResults(number_inv_found,seconds);
     
