@@ -100,18 +100,13 @@ TakeABreak::TakeABreak () : Tool("TakeABreak"), _kmerSize(27), shannon_limit(1.7
 	inversionParser->push_front (new OptionOneParam (STR_MAX_SIM, "max similarity percentage between a and b' and between u and v'", false, "80"));
 
 	IOptionsParser* graphParser = new OptionsParser("Graph");
-#if 0
 	graphParser->push_front (new OptionOneParam (STR_MAX_MEMORY, "max memory (in MBytes)", false, "2000"));
 	graphParser->push_front (new OptionOneParam (STR_MAX_DISK, "max disk   (in MBytes)", false, "0"));
-	graphParser->push_front (new OptionOneParam (STR_SOLIDITY_KIND, "way to consider a solid kmer with several datasets (sum, min or max)", false, "sum"));
-	graphParser->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MAX, "maximal abundance threshold for solid kmers", false, "4294967295"));
+	graphParser->push_front (new OptionOneParam (STR_SOLIDITY_KIND, "way to consider a solid kmer with several datasets (sum, one, or all)", false, "sum"));
+	string abundanceMax = Stringify::format("%ld", std::numeric_limits<CountNumber>::max()); //to be sure in case CountNumber definition changes
+	graphParser->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MAX, "maximal abundance threshold for solid kmers", false, abundanceMax));
 	graphParser->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MIN, "minimal abundance threshold for solid kmers", false, "3"));
 	graphParser->push_front (new OptionOneParam (STR_KMER_SIZE, "size of a kmer", false, "31"));
-#else
-	// TEMPORARY ? some properties are needed by SortingCountAlgorithm and must be added to the OptionsParser (Exception otherwise)
-	graphParser->push_front (SortingCountAlgorithm<>::getOptionsParser(false));
-#endif
-
 
 	getParser()->push_front(generalParser);
 	getParser()->push_front(inversionParser);
@@ -272,6 +267,11 @@ void TakeABreak::execute ()
         getInput()->add(0,STR_BRANCHING_TYPE, "stored");
         getInput()->add(0,STR_INTEGER_PRECISION, "0");
         getInput()->add(0,STR_MPHF_TYPE, "none");
+        getInput()->add(0,STR_MINIMIZER_SIZE, "8");
+        getInput()->add(0,STR_REPARTITION_TYPE, "0");
+        getInput()->add(0,STR_MINIMIZER_TYPE, "0");
+        getInput()->add(0,STR_HISTOGRAM_MAX, "10000");
+        getInput()->add(0,STR_KMER_ABUNDANCE_MIN_THRESHOLD,"3");
         //getInput()->add(0,STR_URI_SOLID_KMERS, ""); //surtout ne pas decommenter cette ligne, sinon les kmers solids sont stockes dans le fichier ./.h5 et les infos ne sont plus dans le output.h5
         
         //Warning if kmer size >128 cascading debloom does not work
@@ -280,6 +280,7 @@ void TakeABreak::execute ()
         }
         
         _graph = Graph::create (getInput());
+        //cout << _graph.getInfo() << endl; // to debug can be useful
         _kmerSize = getInput()->getInt(STR_KMER_SIZE);
         
     }
@@ -290,6 +291,7 @@ void TakeABreak::execute ()
         //fprintf(log,"Loading the graph from file %s\n",getInput()->getStr(STR_URI_GRAPH).c_str());
         
         _graph = Graph::load (getInput()->getStr(STR_URI_GRAPH));
+        //cout << _graph.getInfo() << endl; // to debug can be useful
         _kmerSize = _graph.getKmerSize();
     }
     
@@ -363,6 +365,7 @@ void TakeABreak::execute ()
 void TakeABreak::resumeParameters(){
     
     //Properties resumeParams;
+	//getInfo()->add(0,"test",getInput()->getStr(STR_MINIMIZER_SIZE).c_str());
     getInfo()->add(0,"Parameters");
     getInfo()->add(1,"Input data");
     if (getInput()->get(STR_URI_INPUT) != 0){
@@ -373,15 +376,28 @@ void TakeABreak::resumeParameters(){
     }
     getInfo()->add(1,"Graph");
     getInfo()->add(2,"kmer-size","%i", _kmerSize);
-    try { // entour try/catch ici au cas ou le nom de la cle change dans gatb-core
-        getInfo()->add(2,"abundance_min",_graph.getInfo().getStr("abundance_min").c_str());
-        getInfo()->add(2,"abundance_max",_graph.getInfo().getStr("abundance_max").c_str());
-        getInfo()->add(2,"solidity_kind",_graph.getInfo().getStr("solidity_kind").c_str());
-        getInfo()->add(2,"nb_solid_kmers",_graph.getInfo().getStr("kmers_nb_solid").c_str());
-        getInfo()->add(2,"nb_branching_nodes",_graph.getInfo().getStr("nb_branching").c_str());
+
+    try { // version actuelle info manquante si -graph
+    	getInfo()->add(2,"nb_banks",_graph.getInfo().getStr("nb_banks").c_str());
     } catch (Exception e) {
-        // doing nothing
+    	// doing nothing
     }
+    getInfo()->add(2,"solidity_kind",_graph.getInfo().getStr("solidity_kind").c_str());
+    //getInfo()->add(2,"abundance_min",_graph.getInfo().getStr("abundance_min").c_str()); // to change en thresholds
+    try { // entour try/catch ici au cas ou le nom de la cle change dans gatb-core
+    	getInfo()->add(2,"abundance_min (auto inferred)",_graph.getInfo().getStr("cutoffs_auto.values").c_str());
+    } catch (Exception e) {
+    	// doing nothing
+    }
+    getInfo()->add(2,"abundance_min (used)",_graph.getInfo().getStr("thresholds").c_str());
+    try { // version actuelle info manquante si -graph
+    	getInfo()->add(2,"abundance_max",_graph.getInfo().getStr("abundance_max").c_str());
+    } catch (Exception e) {
+    	// doing nothing
+    }
+    getInfo()->add(2,"nb_solid_kmers",_graph.getInfo().getStr("kmers_nb_solid").c_str());
+    getInfo()->add(2,"nb_branching_nodes",_graph.getInfo().getStr("nb_branching").c_str());
+
     getInfo()->add(1,"Inversions");
     getInfo()->add(2,"repeat","%i", _tolerance_rc);
     getInfo()->add(2,"max_sim","%i", _max_sim);
@@ -404,34 +420,36 @@ void TakeABreak::resumeResults(size_t number_inv_found, double seconds){
     //getInfo()->add(2,"log_file", "%s",_log_file.c_str());
 
 }
+
 // dirty but efficient: declare
 char int2char['z'];
 
+// NO LONGER USED : for Shannon index
 void init_int2char(){
     
     int i;
     for(i=0;i<'U';i++) int2char[i]=-1;
     
-    int2char['a']=0;
-    int2char['A']=0;
-    int2char['c']=1;
-    int2char['C']=1;
-    int2char['g']=2;
-    int2char['G']=2;
-    int2char['t']=3;
-    int2char['T']=3;
-    int2char['n']=4;
-    int2char['N']=4;
+    int2char[(int)'a']=0;
+    int2char[(int)'A']=0;
+    int2char[(int)'c']=1;
+    int2char[(int)'C']=1;
+    int2char[(int)'g']=2;
+    int2char[(int)'G']=2;
+    int2char[(int)'t']=3;
+    int2char[(int)'T']=3;
+    int2char[(int)'n']=4;
+    int2char[(int)'N']=4;
     
 }
 
-
+// NO LONGER USED : for Shannon index
 inline int get_value_char(char val)
 {
 	return (int)int2char[(int)val];
 }
 
-
+// NO LONGER USED
 // Compute the Shannon index of a sequence //Fixme: optimizer en lisant plus d'un caractere a la fois
 float shannon_index(const string& read)
 {
