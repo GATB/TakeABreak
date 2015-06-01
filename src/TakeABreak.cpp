@@ -389,7 +389,17 @@ void TakeABreak::resumeParameters(){
     } catch (Exception e) {
     	// doing nothing
     }
-    getInfo()->add(2,"abundance_min (used)",_graph.getInfo().getStr("thresholds").c_str());
+    string min_abundance;
+    if(_graph.getInfo().getStr("solidity_kind")=="sum"){
+    	int thre = _graph.getInfo().getInt("thresholds"); //with getInt obtains the first number (if sum : threshold = x x x ...)
+    	stringstream ss;
+    	ss << thre;
+    	min_abundance = ss.str();
+    }
+    else{
+    	min_abundance = _graph.getInfo().getStr("thresholds").c_str();
+    }
+    getInfo()->add(2,"abundance_min (used)",min_abundance);
     try { // version actuelle info manquante si -graph
     	getInfo()->add(2,"abundance_max",_graph.getInfo().getStr("abundance_max").c_str());
     } catch (Exception e) {
