@@ -28,16 +28,18 @@ TakeABreak detects inversion breakpoints directly from raw NGS reads, without th
 TakeABreak now comes as a single executable, combining the de bruijn graph creation and the inversion breakpoint detection algorithm.
 	
 	A/ Input data
-	If read set(s) is/are provided (option -in) TakeABreak pipelines the de Bruijn graph creation with the inversion breakpoint detection phase. In this case, the user can provide the de Bruijn graph creation options plus the breakpoint detection options. 
+	If one or several read sets are provided (option -in) TakeABreak pipelines the de Bruijn graph creation with the inversion breakpoint detection phase. In this case, the user can provide the de Bruijn graph creation options plus the breakpoint detection options. 
 	If only a graph file is provided (option -graph) TakeABreak only computes the breakpoint detections based on this graph. Only the breakpoint detection options can thus be provided.
 	NOTE: options -in and -graph are mutually exclusive, and one of these is mandatory.
+	
+	If the input is composed of several read files, they can be provided as a list of file paths separated by a comma or as a "file of file" (fof), that is a text file containing on each line the path to each read file. Read file format can be fasta, fastq or gzipped. 
 		
 	B/ de Bruijn graph creation options.
 	In addition to input read set(s), the de Bruijn graph creation uses two main parameters: 
 		* -kmer-size : the k-mer size [default '31']. To use k>128, you will need to re-compile with -Dk4=256 or 512, etc.
-		* -abundance-min : the minimal abundance threshold, k-mers having less than this number of occurrences are discarded from the graph [default '3']
+		* -abundance-min : the minimal abundance threshold, k-mers having less than this number of occurrences are discarded from the graph [default 'auto', ie. automatically inferred from the dataset]. If several datasets are given, this parameter can be a list of thresholds, one for each dataset.
 		* -abundance-max : the maximal abundance threshold, k-mers having more than this number of occurrences are discarded from the graph [default '3']
-		* -solidity-kind : the way to consider a solid kmer with several datasets (sum, min or max) [default 'sum']. Details : with 'sum', a kmer is solid if the sum of its abundances in all input datasets respect the abundance-min and abundance-max conditions; with 'min' (resp. max) a kmer is solid if the minimal (resp. maximal) abundance among the datasets is in the interval [min-max]. This is almost equivalent to : with 'min' the kmer must be solid in all datasets, with 'max' the kmer must be solid in at least one dataset.
+		* -solidity-kind : the way to consider a solid kmer with several datasets (sum, one or all) [default 'sum']. Details : with 'sum', a kmer is solid if the sum of its abundances in all input datasets respect the abundance-min and abundance-max conditions; with 'one' (resp. all) a kmer is solid if its abundance in at least one dataset (resp. in all datasets) is in the interval [min-max]. 
 	
 	B/ Breakpoint detection options.
 	The breakpoint detection module takes as input the previously created de Bruijn graph (.h5 file). In addition its options are:
@@ -58,8 +60,25 @@ TakeABreak now comes as a single executable, combining the de bruijn graph creat
 		* -max-memory : max RAM memory for the graph creation (in MBytes)  [default '2000']. Increasing the memory will speed up the graph creation phase.
 		* -max-disk : max usable disk space for the graph creation (in MBytes)  [default '0', ie. automatically set]. Kmers are counted by writting temporary files on the disk, to speed up the counting you can increase the usable disk space.
 		
+
+3/ Details on dealing with several input read files
+
+	Depending on the value of the parameter -solidity-kind all input datasets can be considered as one single dataset (ie. concatenating the files) or as separate datasets. This impacts the filtering out of kmers with sequencing errors, whether this is done conjointly by summing abundances over all datasets ('sum') or independently for each dataset ('one' or 'all'). This can lead to significant differences in terms of results when numerous individuals are compared or when the sequencing effort is variable among individuals; in these cases, we recommend to treat each dataset independently ('one').
+	Usually, one dataset corresponds to one individual or one biological condition. On the contrary, if for one individual or condition, one has several read files (for instance, paired read files or more than one sequencing lane), they should be considered as one in order to increase the read depth (and thus the power of variant detection) per individual. In a typical case with several individuals having each several read files, some files should be concatenated but not all, the solution is to use an arborescent file of file (fof) : in the master fof (given with the -in option) each line will be the path to another fof of one individual. The individual fofs will contain paths of files to be concatenated.
+	Example : assume you have 3 individuals (indivA, indivB, indivC) having each two read files (R1 and R2), those files are all located in a directory path/DATA. The command line could be for instance:
+	./TakeABreak -in path/DATA/data_3indiv.fof -kmer-size 31 -abundance-min 3,7,auto -solidity-kind one -out result_3indiv 
+	the file data_3indiv.fof contains 3 lines such as :
+		indivA.fof
+		indivB.fof
+		indivC.fof
+	With indivA.fof file, located in the path/DATA directory and containing the following two lines :
+		indivA_readR1.fastq
+		indivA_readR2.fastq
+		
+	Note that fof files do not need to be located in the same directory as the files they refer to. If this is not the case, the path of the file (absoulte or relative from the location of the fof file) must be added for each file.
+	
  
-3/ Full example
+4/ Full example
 This toy example can be run with the provided data.
 	A/ Example from raw input reads:
 	./TakeABreak -in data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta -out MyFirstTakeABreakExperiment
@@ -70,13 +89,13 @@ This toy example can be run with the provided data.
 	./TakeABreak -graph MyFirstTakeABreakExperiment.h5 -out MySecondTakeABreakExperiment
 	This command line uses the already computed de Bruijn graph (MyFirstTakeABreakExperiment.h5) to detect the 6 artificial inversions and outputs them in MySecondTakeABreakExperiment.fasta. 
 		
-4/ Utility programs
+5/ Utility programs
 Either in your bin/ directory or in ext/gatb-core/bin/, you can find additional utility programs :
 	* dbginfo : to get information about a graph stored in a .h5 file
 	* dbgh5 : to build a graph from read set(s) and obtain a .h5 file
 	* h5dump : to extract all data stored in a .h5 file
 	
-5/ Publication
+6/ Publication
 Mapping-Free and Assembly-Free Discovery of Inversion Breakpoints from Raw NGS Reads. Claire Lemaitre, Liviu Ciortuz, and Pierre Peterlongo. AlCoB 2014 (Tarragona), Lecture Notes in Computer Science vol. 8542, pp. 119--130.
 
  
