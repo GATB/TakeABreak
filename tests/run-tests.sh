@@ -90,7 +90,7 @@ echo "Test$num : larger dataset ch22..."
 ch22dir="/Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new"
 test3="test$num"
 
-../build/TakeABreak -in $ch22dir/humch22c_reads.fasta,$ch22dir/humch22c.inv_reads.fasta -out $outdir/$test3 > $outdir/$test3.out
+../build/TakeABreak -in $ch22dir/humch22c_reads.fasta,$ch22dir/humch22c.inv_reads.fasta -abundance-min 3 -out $outdir/$test3 > $outdir/$test3.out
 
 ../build/ext/gatb-core/bin/dbginfo -in $outdir/$test3.h5 > $outdir/$test3.h5.info
 
@@ -182,7 +182,7 @@ test6="test$num"
 
 ## evaluation :
 
-dif=$(diff $outdir/$test6.fasta $gold/$test6.fasta | wc -l)
+dif=$(diff $outdir/$test6.fasta $gold/$test6.fasta | wc -l | grep -o "[0-9]\+")
 
 nb1=$(grep "nb_solid_kmers" $outdir/$test6.out | grep -o "[0-9]\+")
 nb2=$(grep "nb_branching_nodes" $outdir/$test6.out | grep -o "[0-9]\+")

@@ -53,7 +53,7 @@ using namespace std;
 // variable name is STR_LIBRARY_VERSION
 
 char * getVersion(){
-	return (char *)"1.1.1"; // TO UPDATE AT EACH RELEASE
+	return (char *)"1.1.2"; // TO UPDATE AT EACH RELEASE
     //return (char *)STR_LIBRARY_VERSION;
 }
 
@@ -103,7 +103,7 @@ TakeABreak::TakeABreak () : Tool("TakeABreak"), _kmerSize(27), shannon_limit(1.7
 	IOptionsParser* graphParser = new OptionsParser("Graph");
 	graphParser->push_front (new OptionOneParam (STR_MAX_MEMORY, "max memory (in MBytes)", false, "2000"));
 	graphParser->push_front (new OptionOneParam (STR_MAX_DISK, "max disk   (in MBytes)", false, "0"));
-	graphParser->push_front (new OptionOneParam (STR_SOLIDITY_KIND, "way to consider a solid kmer with several datasets (sum, one, or all)", false, "sum"));
+	graphParser->push_front (new OptionOneParam (STR_SOLIDITY_KIND, "way to consider a solid kmer with several datasets (sum, one, or all)", false, "one"));
 	string abundanceMax = Stringify::format("%ld", std::numeric_limits<CountNumber>::max()); //to be sure in case CountNumber definition changes
 	graphParser->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MAX, "maximal abundance threshold for solid kmers", false, abundanceMax));
 	graphParser->push_front (new OptionOneParam (STR_KMER_ABUNDANCE_MIN, "minimal abundance threshold for solid kmers", false, "auto"));
