@@ -61,7 +61,7 @@ TakeABreak now comes as a single executable, combining the de bruijn graph creat
 		* -solidity-kind : the way to consider a solid kmer with several input datasets (sum, one or all) [default 'one']. Details : with 'sum', a kmer is solid if the sum of its abundances in all input datasets respects the abundance-min and abundance-max conditions; with 'one' (resp. 'all') a kmer is solid if its abundance in at least one dataset (resp. in all datasets) is in the interval [min-max]. 
 	
 	C/ Breakpoint detection options
-	The breakpoint detection module takes as input the previously created de Bruijn graph (.h5 file). In addition its options are:
+	The breakpoint detection algorithm uses the following optional parameters:
 		* -lct : the local complexity threshold, this limits the search, particularly in complex parts of the graph [default '100']. Warning : depending on the graph, increasing this parameter could lead to very long runtime.
 		* -max-sim : the max similarity percentage, inversions with a and b' (or u and v') whose longest common subsequence size is larger than k*(this value)/100 are discarded [default '80']. Warning : increasing this parameter may lead to numerous false positives (genomic approximate repeats).
 		* -repeat : the maximal repeat size at the breakpoint (ie. the longest common suffix size of a and reverse complement of b) [default '8']. To be fully effective, the -max-sim parameter should be fixed accordingly. (this option was formerly called reverse tolerance)
