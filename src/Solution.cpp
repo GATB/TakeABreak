@@ -45,23 +45,30 @@ bool Solution::operator< (const Solution& other) const  {
     return _auvb<other._auvb;
 }
 
-size_t Solution::writeFastaBreakpoints(FILE * out, size_t id) {
+size_t Solution::writeFastaBreakpoints(FILE * out, size_t id, size_t kmerSize) {
     if(_auvb.size()>0){
         size_t l=_auvb.size(); // should be even
         size_t l2=l/2;
         size_t lmin=l2/2;
         size_t lmax=l2-lmin;
         // the size of breakpoint sequences can be odd
+
+        // Computing the size of the repeat
+        // WARNING: for untruncated solutions, this will always give 0, even if the repeat is not null.
+        size_t rep=2*kmerSize-2-l2;
+
         //keeping a and b of length lmax, and u and v of length lmin
         string a=_auvb.substr(0,lmax);
         string u=_auvb.substr(lmax,lmin);
         string v=_auvb.substr(l2,lmin);
         string b=_auvb.substr(l2+lmin,lmax);
+
+        // format similar to discoSnp
         stringstream res;
-        res <<">inv_"<<id<<" au\n"<<a<<u<<"\n";
-        res <<">vb\n"<<v<<b<<"\n";
-        res <<">av'\n"<<a<<reverseComplement(v)<<"\n";
-        res <<">u'b\n"<<reverseComplement(u)<<b<<"\n";
+        res <<">INV_a-u_"<<id<<"|rep_"<<rep<<"\n"<<a<<u<<"\n";
+        res <<">INV_v-b_"<<id<<"|rep_"<<rep<<"\n"<<v<<b<<"\n";
+        res <<">INV_a-vbar_"<<id<<"|rep_"<<rep<<"\n"<<a<<reverseComplement(v)<<"\n";
+        res <<">INV_ubar-b_"<<id<<"|rep_"<<rep<<"\n"<<reverseComplement(u)<<b<<"\n";
         
         fprintf(out,"%s",res.str().c_str());
         return 1;
@@ -84,10 +91,10 @@ size_t Solution::writeFastaNodes(FILE * out, size_t id) {
         string v=_auvb.substr(l2,lmin);
         string b=_auvb.substr(l2+lmin,lmax);
         stringstream res;
-        res <<">inv_"<<id<<" a\n"<<a<<"\n";
-        res <<">u\n"<<u<<"\n";
-        res <<">v\n"<<v<<"\n";
-        res <<">b\n"<<b<<"\n";
+        res <<">INV_a_"<<id<<"\n"<<a<<"\n";
+        res <<">INV_u_"<<id<<"\n"<<u<<"\n";
+        res <<">INV_v_"<<id<<"\n"<<v<<"\n";
+        res <<">INV_b_"<<id<<"\n"<<b<<"\n";
         
         fprintf(out,"%s",res.str().c_str());
         return 1;

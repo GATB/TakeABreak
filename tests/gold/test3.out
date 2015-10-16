@@ -1,24 +1,26 @@
 TakeABreak                              
-    version                                  : 1.1.0
-    gatb-core-library                        : 1.0.6
+    version                                  : 1.1.2
+    gatb-core-library                        : 1.1.1
+    supported_kmer_sizes                     : 32 64 96 128 256
 Parameters                              
     Input data                              
         Reads                                    : /Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new/humch22c_reads.fasta,/Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new/humch22c.inv_reads.fasta
     Graph                                   
         kmer-size                                : 31
-        abundance_min                            : 3
-        abundance_max                            : 4294967295
-        solidity_kind                            : sum
-        nb_solid_kmers                           : 31694953
-        nb_branching_nodes                       : 421604
+        nb_banks                                 : 2
+        solidity_kind                            : one
+        abundance_min (used)                     : 3 3 
+        abundance_max                            : 2147483647
+        nb_solid_kmers                           : 31642653
+        nb_branching_nodes                       : 397494
     Inversions                              
         repeat                                   : 8
         max_sim                                  : 80
         LCT                                      : 100
 Results                                 
-    nb_occurrences                           : 6421
-    nb_distinct_solutions                    : 1128
-    time                                     : 85.0 s
+    nb_occurrences                           : 6507
+    nb_distinct_solutions                    : 1114
+    time                                     : 80.0 s
     output_files                            
         graph_file                               : newtests/test3.h5
         solution_file                            : newtests/test3.fasta

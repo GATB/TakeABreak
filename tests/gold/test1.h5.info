@@ -1,33 +1,36 @@
 graph                                   
     gatb-core-library                        :     
-        version                                  : 1.0.6
-        build_date                               : 2015-02-11 11:24:31
-        build_system                             : Darwin-12.5.0
-        build_compiler                           : /usr/bin/cc  (4.1.0)
-        build_kmer_size                          : 32 64 96 128
-        custom_memalloc                          : 0
-    dsk                                      :     
+        version                                  : 1.1.1
+        git_sha1                                 : notset
+        build_date                               : 2015-10-16 14:15:08
+        build_system                             : Darwin-12.6.0
+        build_compiler                           : /usr/local/bin/gcc-4.9  (4.9.0)
+        build_kmer_size                          : 32 64 96 128 256
+    configuration                            :     
         config                                   :        
             kmer_size                                : 31
             mini_size                                : 8
-            solidity_kind                            : sum
-            abundance_min                            : 3
-            abundance_max                            : 4294967295
-            available_space                          : 8380016
+            solidity_kind                            : one
+            abundance_min                            : -1
+            abundance_max                            : 2147483647
+            available_space                          : 2990465
             sequence_number                          : 800
             sequence_volume                          : 0
             kmers_number                             : 56000
             kmers_volume                             : 1
-            max_disk_space                           : 10000
+            max_disk_space                           : 2988465
             max_memory                               : 2000
             nb_passes                                : 1
             nb_partitions                            : 32
             nb_bits_per_kmer                         : 64
             nb_cores                                 : 4
-            partition_type                           : 0
             minimizer_type                           : lexicographic (kmc2 heuristic)
+            repartition_type                         : unordered
             nb_cores_per_partition                   : 1
             nb_partitions_in_parallel                : 4
+            nb_cached_items_per_core_per_part        : 262144
+            nb_banks                                 : 2
+    dsk                                      :     
         bank                                     :        
             bank_uri                                 : ../data/toy_example_reads.fasta,../data/toy_example_with_inv_reads.fasta
             bank_size                                : 141259
@@ -42,58 +45,63 @@ graph
                 kmers_nb_valid                           : 56000
                 kmers_nb_invalid                         : 0
         stats                                    :        
-            kmers                                    :           
-                kmers_nb_distinct                        : 3276
-                kmers_nb_solid                           : 1319
-                kmers_nb_weak                            : 1957
-                kmers_percent_weak                       : 59.7
-            histogram                                :           
-                cutoff                                   : 3
-                nb_ge_cutoff                             : 0
-                percent_ge_cutoff                        : 0.0
-                first_peak                               : 0
-            partitions                               :           
-                nb_partitions                            : 32
-                nb_items                                 : 1319
-                part_biggest                             : 96
-                part_smallest                            : 0
-                part_mean                                : 41.2
-                cmd                                      : hash:0 vector:32
-            fillsolid_time                           : 0.011          
+            cutoffs_auto                             :           
+                values                                   : 5 11 
+            dsk                                      :           
+                histogram                                :              
+                    cutoff                                   : 4
+                    nb_ge_cutoff                             : 1317
+                    first_peak                               : 32
+                kmers                                    :              
+                    solidity_kind                            : one
+                    thresholds                               : 5 11 
+                    kmers_nb_distinct                        : 3276
+                    kmers_nb_solid                           : 1299
+                    kmers_nb_weak                            : 1977
+                    kmers_percent_weak                       : 60.3
+                partitions                               :              
+                    nb_partitions                            : 32
+                    nb_items                                 : 1299
+                    part_biggest                             : 71
+                    part_smallest                            : 22
+                    part_mean                                : 40.6
+                    kind                                     :                 
+                        vector                                   : 32
+            fillsolid_time                           : 0.020          
                 1.read                                   : 0.007
-                2.sort                                   : 0.003
-                3.dump                                   : 0.001
-        time                                     : 0.147       
-            fill_partitions                          : 0.073
-            fill_solid_kmers                         : 0.074
+                2.sort                                   : 0.011
+                3.dump                                   : 0.002
+        time                                     : 0.544       
+            fill_partitions                          : 0.471
+            fill_solid_kmers                         : 0.073
     bloom                                    :     
         stats                                    :        
             kind                                     : neighbor
-            bitsize                                  : 7959
+            bitsize                                  : 7838
             nb_hash                                  : 4
             nbits_per_kmer                           : 6.034370
-        time                                     : 0.003       
-            build_from_kmers                         : 0.003
+        time                                     : 0.002       
+            build_from_kmers                         : 0.002
     debloom                                  :     
         stats                                    :        
             kind                                     : cascading
             impl                                     : DebloomMinimizerAlgorithm
-            bitsize                                  : 9967
-            nbits_per_kmer                           : 7.556482
-            cfp                                      : 2008          
-                bloom2                                   : 1478
-                bloom3                                   : 446
-                bloom4                                   : 84
+            bitsize                                  : 9924
+            nbits_per_kmer                           : 7.639723
+            cfp                                      : 2086          
+                bloom2                                   : 1556
+                bloom3                                   : 440
+                bloom4                                   : 90
                 set                                      : 0
-                nb                                       : 245
-        time                                     : 0.069       
-            cascading                                : 0.006
-            fill_debloom_file                        : 0.055
-            finalize_debloom_file                    : 0.008
+                nb                                       : 258
+        time                                     : 0.021       
+            cascading                                : 0.004
+            fill_debloom_file                        : 0.011
+            finalize_debloom_file                    : 0.006
     branching                                :     
         stats                                    :        
             nb_branching                             : 26
             percentage                               : 2.0
-            checksum_branching                       : 17ac65b3b6406bcb
+            checksum_branching                       : 348fec005f503cb6
         time                                     :        
-            build                                    : 0.005
+            build                                    : 0.003
