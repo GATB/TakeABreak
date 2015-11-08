@@ -43,7 +43,7 @@ public:
     
     /** Prints the solution breakpoints in the output file as a multi-fasta
      */
-    size_t writeFastaBreakpoints(FILE * out, size_t id);
+    size_t writeFastaBreakpoints(FILE * out, size_t id, size_t kmerSize);
     
     /** Prints the solution nodes in the output file as a multi-fasta
      */

@@ -70,7 +70,7 @@ TakeABreak now comes as a single executable, combining the de bruijn graph creat
 	D/ TakeABreak Output
 	TakeABreak generates the following output files: 
 		* a graph file (.h5). This is a binary file, to obtain information stored in it, you can use the utility program dbginfo located in your bin directory or in ext/gatb-core/bin/.
-		* a fasta file (.fasta) containing the canonical representations of the detected inversion breakpoints. Each inversion corresponds to 4 entries in the fasta file : the first two correspond to the breakpoint sequences (a-u,v-b) (canonical representation) that should be present in one genome and the last two are the corresponding breakpoint sequences in the other genome (a-revcomp(v),revcomp(u)-b).
+		* a fasta file (.fasta) containing the canonical representations of the detected inversion breakpoints. Each inversion corresponds to 4 entries in the fasta file : the first two correspond to the breakpoint sequences (a-u,v-b) (canonical representation) that should be present in one genome and the last two are the corresponding breakpoint sequences in the other genome (a-revcomp(v),revcomp(u)-b). Additionally, the size of the exact repeat detected at the breakpoints is indicated in each entry header (e.g. |rep_4). 
 	All the output results are prefixed either by a default name: "TakeABreak_Expe-[date:YY:MM:DD-HH:mm]" or by a user defined prefix (option -out of TakeABreak)
 	
 	E/ Computational resources options

@@ -1,14 +1,16 @@
 TakeABreak                              
-    version                                  : 1.1.0
-    gatb-core-library                        : 1.0.6
+    version                                  : 1.1.2
+    gatb-core-library                        : 1.1.1
+    supported_kmer_sizes                     : 32 64 96 128 256
 Parameters                              
     Input data                              
         Reads                                    : /Users/clemaitr/DATA/NGSdata/LbFV_raw_data/Varaldi_LbFV_TTCAGC_L001_R1_001.fastq
     Graph                                   
         kmer-size                                : 127
-        abundance_min                            : 500
-        abundance_max                            : 4294967295
-        solidity_kind                            : sum
+        nb_banks                                 : 1
+        solidity_kind                            : one
+        abundance_min (used)                     : 500 
+        abundance_max                            : 2147483647
         nb_solid_kmers                           : 112227
         nb_branching_nodes                       : 155
     Inversions                              

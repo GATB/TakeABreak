@@ -262,6 +262,7 @@ void TakeABreak::execute ()
         // We need to add the options of dbgh5/Graph that were masked to the user (or we could create a new Properties object)
         getInput()->add(0,STR_BANK_CONVERT_TYPE,"tmp");
         getInput()->add(0,STR_URI_OUTPUT_DIR, ".");
+        getInput()->add(0,STR_URI_OUTPUT_TMP, ".");
         getInput()->add(0,STR_BLOOM_TYPE, "neighbor"); //neighbor
         getInput()->add(0,STR_DEBLOOM_TYPE, "cascading");
         getInput()->add(0,STR_DEBLOOM_IMPL, "minimizer"); //minimizer => STR_BLOOM_TYPE = neighbor
@@ -658,7 +659,7 @@ size_t TakeABreak::writeResults(FILE * out)
     size_t count=0;
     while (!_solutions.empty()) {
         Solution sol=*_solutions.begin();
-        size_t res=sol.writeFastaBreakpoints(out,count);
+        size_t res=sol.writeFastaBreakpoints(out,count,_kmerSize);
         _solutions.erase(_solutions.begin());
         count=count+res;
     }
@@ -672,7 +673,7 @@ size_t TakeABreak::writeUntruncResults(FILE * out)
     size_t count=0;
     while (!_untruncSolutions.empty()) {
         Solution sol=*_untruncSolutions.begin();
-        size_t res=sol.writeFastaBreakpoints(out,count);
+        size_t res=sol.writeFastaBreakpoints(out,count,_kmerSize);
         //size_t res=sol.writeFastaNodes(out,count); // here each fasta entry is the sequence of a node, not the concatenation as a breakpoint sequence
         _untruncSolutions.erase(_untruncSolutions.begin());
         count=count+res;

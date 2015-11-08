@@ -1,15 +1,18 @@
 TakeABreak                              
-    version                                  : 1.1.0
-    gatb-core-library                        : 1.0.6
+    version                                  : 1.1.2
+    gatb-core-library                        : 1.1.1
+    supported_kmer_sizes                     : 32 64 96 128 256
 Parameters                              
     Input data                              
         Graph                                    : newtests/test1.h5
     Graph                                   
         kmer-size                                : 31
-        abundance_min                            : 3
-        abundance_max                            : 4294967295
-        solidity_kind                            : sum
-        nb_solid_kmers                           : 1319
+        nb_banks                                 : 2
+        solidity_kind                            : one
+        abundance_min (auto inferred)            : 5 11 
+        abundance_min (used)                     : 5 11 
+        abundance_max                            : 2147483647
+        nb_solid_kmers                           : 1299
         nb_branching_nodes                       : 26
     Inversions                              
         repeat                                   : 8
