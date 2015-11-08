@@ -512,13 +512,13 @@ inline int number_substitutions(const string& a, const string& b){
 
 
 // USED ONLY AS A TEST : Returns True if prefixes of size _tolerance_rc of both strings are different
-bool TakeABreak::check_tolerance(const Node& s1, const Node& s2, const int _tolerance_rc){
+bool TakeABreak::check_tolerance(Node& s1, Node& s2, const int _tolerance_rc){
     if(_graph.toString(s1).substr(0,_tolerance_rc+1).compare(_graph.toString(s2).substr(0,_tolerance_rc+1))==0) return false;
     return true;
 }
 
 // NO LONGER USED : Returns True if both pairs a-bbar and u-vbar have more than 10 substutions (when aligned naively)
-bool TakeABreak::conserve_inversion(const Node& a, const Node& u, const Node& v, const Node& b){
+bool TakeABreak::conserve_inversion(Node& a, Node& u, Node& v, Node& b){
     const int limit_subsitutions=10; // TODO parameter?
     // checks that a is different enough from rc(b)
     if(number_substitutions(_graph.toString(a),_graph.toString(_graph.reverse(b)))<=limit_subsitutions) return false;
@@ -568,7 +568,7 @@ inline int lcp(const string& a, const string& b){
 // x=lcp(a',b)
 // u=u[0,|u|-x] // (end of a = beginning of rev comp of b)
 // v=v[x,|v|]
-Solution TakeABreak::get_canonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b){
+Solution TakeABreak::get_canonicalSolution(Node& a, Node& u, Node& v, Node& b){
     string strings[8];
     
     //cout << "a=" << _graph.toString(a) << " u=" << _graph.toString(u) << " v=" << _graph.toString(v) << " b=" << _graph.toString(b) << endl;
@@ -684,7 +684,7 @@ size_t TakeABreak::writeUntruncResults(FILE * out)
 // Enables to see all breakpoint solutions (when there are variations at the extremities of the breakpoints)
 // BUT : solutions with a repeat are very likely to be output twice, depending if the repeat is in a/b' or in u/v'
 // Only used when PRINTALL=1
-Solution TakeABreak::get_untruncatedCanonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b){
+Solution TakeABreak::get_untruncatedCanonicalSolution(Node& a, Node& u, Node& v, Node& b){
     string strings[8];
     
     //cout << "a=" << _graph.toString(a) << " u=" << _graph.toString(u) << " v=" << _graph.toString(v) << " b=" << _graph.toString(b) << endl;
@@ -808,7 +808,7 @@ void TakeABreak::MainLoopFunctor::operator() (Node& nodeA)
             continue;
         }
         // get all immediate out-neighbors of node A
-        Graph::Vector<Node> neighborsA = ref._graph.neighbors<Node> (nodeA, DIR_OUTCOMING);
+        Graph::Vector<Node> neighborsA = ref._graph.neighbors (nodeA, DIR_OUTCOMING);
 
 #ifdef debug
         cout<<neighborsA.size()<<" immediate neighbor"<<endl;
@@ -930,7 +930,7 @@ void TakeABreak::find_ALL_occurrences_of_inversion_pattern (LCS& lcsParam)
     Dispatcher dispatcher (_nbCores);
 
     /** We define an iterator over the branching nodes of the graph. We use also progress information. */
-    ProgressGraphIterator<BranchingNode, ProgressTimerAndSystem> branchingNodes (_graph.iterator<BranchingNode>(), "looping nodes");
+    ProgressGraphIterator<BranchingNode, ProgressTimerAndSystem> branchingNodes (_graph.iteratorBranching(), "looping nodes");
     
     /** We use one LCS object per thread => this is done thanks to the ThreadObject class. */
     ThreadObject<LCS> lcs (lcsParam);
@@ -968,7 +968,7 @@ bool TakeABreak::checkPath (Node nodeV, Node nodeB)
     //for(int i=0;i<_kmerSize && check;i++){
         check=false;
         // We retrieve all outcoming edges from current nodes
-        Graph::Vector<Edge> edges = _graph.neighbors<Edge> (currentNode, DIR_OUTCOMING);
+        Graph::Vector<Edge> edges = _graph.neighborsEdge (currentNode, DIR_OUTCOMING);
         int j=0;
         // cout << "step i=" << i << endl;
         
@@ -1034,7 +1034,7 @@ void TakeABreak::printParameters(FILE * log){
 // x=lcp(a',b)
 // u=u[0,|u|-x] // (end of a = beginning of rev comp of b)
 // v=v[x,|v|]
-bool TakeABreak::print_canonical(const Node& a, const Node& u, const Node& v, const Node& b, int& number_inv_found, FILE * out){
+bool TakeABreak::print_canonical(Node& a, Node& u, Node& v, Node& b, int& number_inv_found, FILE * out){
     string strings[8];
     bool output = false;
     
@@ -1245,7 +1245,7 @@ bool TakeABreak::print_canonical(const Node& a, const Node& u, const Node& v, co
 
 // Returns the canonical string of an occurence (4 sequences of size at most 2k-2 each)
 // no longer used, see Solution TakeABreak::get_canonical(...)
-string TakeABreak::get_canonical(const Node& a, const Node& u, const Node& v, const Node& b){
+string TakeABreak::get_canonical(Node& a, Node& u, Node& v, Node& b){
     string strings[8];
     char canon[512];
     //LocalSynchronizer local(synchro);

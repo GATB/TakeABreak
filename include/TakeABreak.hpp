@@ -87,27 +87,27 @@ public:
      */
     bool checkPath (Node nodeV, Node nodeB);
     
-    bool conserve_inversion(const Node& a, const Node& u, const Node& v, const Node& b);
+    bool conserve_inversion(Node& a, Node& u, Node& v, Node& b);
     // the two sequences s1 and s2 are distinct enough (return true) if (s1[0:size_tolerance_rc] !=  s2[0:size_tolerance_rc])
-    bool check_tolerance(const Node& s1, const Node& s2, const int size_tolerance_rc);
+    bool check_tolerance(Node& s1, Node& s2, const int size_tolerance_rc);
 	
 	/** Returns the canonical solution of the occurrence composed of the four nodes a, u, v and b
      */
-    Solution get_canonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b);
+    Solution get_canonicalSolution(Node& a, Node& u, Node& v, Node& b);
     /** Writes in the file the set of canonical solutions
      */
     size_t writeResults(FILE * out);
     
     /** Returns the canonical -untruncated- solution of the occurrence composed of the four nodes a, u, v and b
      */
-    Solution get_untruncatedCanonicalSolution(const Node& a, const Node& u, const Node& v, const Node& b);
+    Solution get_untruncatedCanonicalSolution(Node& a, Node& u, Node& v, Node& b);
     /** Writes in the file the set of untruncated canonical solutions
      */
     size_t writeUntruncResults(FILE * out);
     
     //no longer used
-    bool print_canonical(const Node& a, const Node& u, const Node& v, const Node& b, int& number_inv_found, FILE * out);
-    string get_canonical(const Node& a, const Node& u, const Node& v, const Node& b);
+    bool print_canonical(Node& a, Node& u, Node& v, Node& b, int& number_inv_found, FILE * out);
+    string get_canonical(Node& a, Node& u, Node& v, Node& b);
 
     
     ISynchronizer* getSynchro(){return synchro;}

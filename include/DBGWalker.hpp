@@ -63,19 +63,19 @@ public:
      * fills the reachable_neighbor vector
      * The last parameter : maxOtherSize enables to stop the recursion search earlier according to the _lct limit
      */
-    void find_all_at_depth(const Node& nodeA, const int depth, size_t maxOtherSize);
+    void find_all_at_depth(Node& nodeA, const int depth, size_t maxOtherSize);
     
     /**
      * Provides all kmers that can be reached from node rcu, after k steps
      * constraint: the kmer at step size_tolerance_rc(+1?) (=forbiden kmer) should be distinct from the 'equivalent' in au (= rc(au)[size_tolerance_rc, size_tolerance_rc+k]
      * fills the reachable_neighbor vector
      */
-    void find_B(const Node& a, const Node& u, const int size_tolerance_rc, LCS& lcs_instance, size_t maxOtherSize);
+    void find_B(Node& a, Node& u, const int size_tolerance_rc, LCS& lcs_instance, size_t maxOtherSize);
     
     
 private:
-    void recursive_find_all_at_depth(const Node& nodeA, const int depth, size_t maxOtherSize);
-    void recursive_find_B(const Node& cur, const int size_tolerance_rc, const int depth, const int distance_from_start, const std::string& forbiden_kmer,
+    void recursive_find_all_at_depth(Node& nodeA, const int depth, size_t maxOtherSize);
+    void recursive_find_B(Node& cur, const int size_tolerance_rc, const int depth, const int distance_from_start, const std::string& forbiden_kmer,
                           LCS& lcs_instance, size_t maxOtherSize, const std::string& rca);
 };
 

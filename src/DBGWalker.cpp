@@ -56,7 +56,7 @@ DBGWalker::DBGWalker (Graph& graph, size_t lct){
  ** RETURN  :
  ** REMARKS :
  *********************************************************************/
-void DBGWalker::recursive_find_all_at_depth(const Node& nodeA, const int depth, size_t maxOtherSize){
+void DBGWalker::recursive_find_all_at_depth(Node& nodeA, const int depth, size_t maxOtherSize){
     
     // deal with possible eroneous call of the function
     if(depth<0) return;
@@ -72,7 +72,7 @@ void DBGWalker::recursive_find_all_at_depth(const Node& nodeA, const int depth, 
     }
 //    cout<<"depth = "<<depth<<endl;
     // go on on all soons.
-    Graph::Vector<Node> neighbor = _graph.neighbors<Node> (nodeA, DIR_OUTCOMING);
+    Graph::Vector<Node> neighbor = _graph.neighbors (nodeA, DIR_OUTCOMING);
 //    cout<<" n size =  "<<neighbor.size()<<endl;
     for(int i=0;i<neighbor.size();i++) recursive_find_all_at_depth(neighbor[i],depth-1, maxOtherSize);
 //    cout<<"finish depth = "<<depth<<endl;
@@ -87,7 +87,7 @@ void DBGWalker::recursive_find_all_at_depth(const Node& nodeA, const int depth, 
  ** RETURN  :
  ** REMARKS :
  *********************************************************************/
-void DBGWalker::find_all_at_depth(const Node& nodeA, const int depth, size_t maxOtherSize){
+void DBGWalker::find_all_at_depth(Node& nodeA, const int depth, size_t maxOtherSize){
 
     idxRecursion = 0;
     recursive_find_all_at_depth(nodeA, depth, maxOtherSize);
@@ -104,7 +104,7 @@ void DBGWalker::find_all_at_depth(const Node& nodeA, const int depth, size_t max
  ** RETURN  :
  ** REMARKS :
  *********************************************************************/
-void DBGWalker::recursive_find_B(const Node& cur, const int size_tolerance_rc, const int depth, const int distance_from_start, const string& forbiden_kmer,
+void DBGWalker::recursive_find_B(Node& cur, const int size_tolerance_rc, const int depth, const int distance_from_start, const string& forbiden_kmer,
                                  LCS& lcs_instance, size_t maxOtherSize, const string& rca){
     // deal with possible eroneous call of the function
     if(depth<0) return;
@@ -138,7 +138,7 @@ void DBGWalker::recursive_find_B(const Node& cur, const int size_tolerance_rc, c
         return;
     
     // go on on all sons.
-    Graph::Vector<Node> neighbor = _graph.neighbors<Node> (cur, DIR_OUTCOMING);
+    Graph::Vector<Node> neighbor = _graph.neighbors (cur, DIR_OUTCOMING);
     for(int i=0;i<neighbor.size();i++) recursive_find_B(neighbor[i],
                                                         size_tolerance_rc,
                                                         depth-1,
@@ -160,7 +160,7 @@ void DBGWalker::recursive_find_B(const Node& cur, const int size_tolerance_rc, c
  ** RETURN  :
  ** REMARKS :
  *********************************************************************/
-void DBGWalker::find_B(const Node& a,const Node& u, const int size_tolerance_rc, LCS& lcs_instance, size_t maxOtherSize){
+void DBGWalker::find_B(Node& a,Node& u, const int size_tolerance_rc, LCS& lcs_instance, size_t maxOtherSize){
 #ifdef debug
     cout<<"find B"<<endl;
     cout<<"a="<<_graph.toString(a)<<endl;
