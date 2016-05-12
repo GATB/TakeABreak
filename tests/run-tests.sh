@@ -4,6 +4,21 @@
 ## Claire Lemaitre
 ## 13/01/2015
 
+# look for TakeABreak binary. In devel mode, it's in ../build/bin directory.
+# In production mode, it's in ../bin directory.
+if [ -f "../bin/TakeABreak" ]
+then
+ bindir="../bin"
+ h5bindir="../bin"
+elif [ -f "../build/bin/TakeABreak" ]
+then
+ bindir="../build/bin"
+ h5bindir="../build/ext/gatb-core/bin"
+else
+ echo "could not find a compiled TakeABreak binary"
+ exit 1
+fi
+
 ## Several tests to make sure we obtain the same results
 
 ## dir for the results obtained with the current version
@@ -44,9 +59,9 @@ if (( $min<=$num )) && (($max>=$num)); then
 echo "Test$num : toy example..."
 test1="test$num"
 
-../build/TakeABreak -in ../data/toy_example_reads.fasta,../data/toy_example_with_inv_reads.fasta -out $outdir/$test1 > $outdir/$test1.out
+${bindir}/TakeABreak -in ../data/toy_example_reads.fasta,../data/toy_example_with_inv_reads.fasta -out $outdir/$test1 > $outdir/$test1.out
 
-../build/ext/gatb-core/bin/dbginfo -in $outdir/$test1.h5 > $outdir/$test1.h5.info
+${h5bindir}/dbginfo -in $outdir/$test1.h5 > $outdir/$test1.h5.info
 
 ## evaluation
 
@@ -67,7 +82,7 @@ if (( $min<=$num )) && (($max>=$num)); then
 echo "Test$num : toy example from graph input..."
 test2="test$num"
 
-../build/TakeABreak -graph $outdir/$test1.h5 -out $outdir/$test2 > $outdir/$test2.out
+${bindir}/TakeABreak -graph $outdir/$test1.h5 -out $outdir/$test2 > $outdir/$test2.out
 
 ## evaluation
 dif=$(diff $outdir/$test2.fasta $gold/$test2.fasta | wc -l | grep -o "[0-9]\+")
@@ -90,9 +105,9 @@ echo "Test$num : larger dataset ch22..."
 ch22dir="/Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new"
 test3="test$num"
 
-../build/TakeABreak -in $ch22dir/humch22c_reads.fasta,$ch22dir/humch22c.inv_reads.fasta -abundance-min 3 -out $outdir/$test3 > $outdir/$test3.out
+${bindir}/TakeABreak -in $ch22dir/humch22c_reads.fasta,$ch22dir/humch22c.inv_reads.fasta -abundance-min 3 -out $outdir/$test3 > $outdir/$test3.out
 
-../build/ext/gatb-core/bin/dbginfo -in $outdir/$test3.h5 > $outdir/$test3.h5.info
+${h5bindir}/dbginfo -in $outdir/$test3.h5 > $outdir/$test3.h5.info
 
 ## evaluation
 dif=$(diff $outdir/$test3.fasta $gold/$test3.fasta | wc -l | grep -o "[0-9]\+")
@@ -121,7 +136,7 @@ echo "Test$num : ch22 with sensitive parameters..."
 ch22dir="/Users/clemaitr/DATA/NGSdata/TakeABreak/ch22_new"
 test4="test$num"
 
-../build/TakeABreak -graph $outdir/$test3.h5 -out $outdir/$test4 -max-sim 95 -repeat 15 -lct 1000 > $outdir/$test4.out
+${bindir}/TakeABreak -graph $outdir/$test3.h5 -out $outdir/$test4 -max-sim 95 -repeat 15 -lct 1000 > $outdir/$test4.out
 
 ## evaluation
 dif=$(diff $outdir/$test4.fasta $gold/$test4.fasta | wc -l | grep -o "[0-9]\+")
@@ -145,7 +160,7 @@ echo "Test$num : large reads k=127..."
 largeKfq="/Users/clemaitr/DATA/NGSdata/LbFV_raw_data/Varaldi_LbFV_TTCAGC_L001_R1_001.fastq"
 test5="test$num"
 
-../build/TakeABreak -in $largeKfq -out $outdir/$test5 -kmer-size 127 -abundance-min 500 -repeat 110 -max-sim 99 > $outdir/$test5.out
+${bindir}/TakeABreak -in $largeKfq -out $outdir/$test5 -kmer-size 127 -abundance-min 500 -repeat 110 -max-sim 99 > $outdir/$test5.out
 
 ## evaluation :
 
@@ -178,7 +193,7 @@ echo "Test$num : large reads k=200..."
 largeKfq="/Users/clemaitr/DATA/NGSdata/LbFV_raw_data/Varaldi_LbFV_TTCAGC_L001_R1_001.fastq"
 test6="test$num"
 
-../build/TakeABreak -in $largeKfq -out $outdir/$test6 -kmer-size 200 -abundance-min 300 > $outdir/$test6.out
+${bindir}/TakeABreak -in $largeKfq -out $outdir/$test6 -kmer-size 200 -abundance-min 300 > $outdir/$test6.out
 
 ## evaluation :
 

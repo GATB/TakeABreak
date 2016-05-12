@@ -1,16 +1,26 @@
+# CMake is required to compile TakeABreak (http://www.cmake.org/cmake/resources/software.html)
+
+# prepare gatb-core submodule; if already done, these lines do nothing.
+git submodule init
+git submodule update
+
 # Prepare directories:
 mkdir build
+
 # Go in the 'build' directory
 cd build
+
 # Prepare the makefile
 cmake ..
+
 # Run the newly created makefile:
-make
+make -j4
+
 # Go back at the installation root directory
 cd .. 
-# Type for instance:
-build/TakeABreak -in data/toy_example_reads.fasta,data/toy_example_with_inv_reads.fasta
 
+# Toy example:
+./build/bin/TakeABreak -in ./tests/data/toy_example_reads.fasta,./tests/data/toy_example_with_inv_reads.fasta
 
 # More details are in doc/user_manual_TakeABreak.txt 
  
