@@ -41,4 +41,5 @@ fi
 ################################################################################
 rm -f  test4* ref check
 
+# for Jenkins CI platform, we need an exit code: PASS (0) vs. FAILED (1)
 exit $RETVAL
