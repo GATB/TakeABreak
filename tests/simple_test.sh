@@ -24,7 +24,7 @@ ${bindir}/TakeABreak -in gold/test4.fasta -out test4.takeabreak
 RETVAL=0
 MD5_PATH=`which md5sum`
 if [ ! -z "$MD5_PATH" ] ; then
-  echo "ec396d93ef253a7c93c4f08edf2a82a7  test4.takeabreak.fasta" > ref
+  echo "0d03de00ebd60f550988c36a42b87402  test4.takeabreak.fasta" > ref
   md5sum  test4.takeabreak.fasta > check
 
   diff ./ref ./check
