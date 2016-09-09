@@ -22,5 +22,5 @@ cd ..
 # Toy example:
 ./build/bin/TakeABreak -in ./tests/data/toy_example_reads.fasta,./tests/data/toy_example_with_inv_reads.fasta
 
-# More details are in doc/user_manual_TakeABreak.txt 
+# More details are in README.md
  
