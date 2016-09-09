@@ -135,10 +135,10 @@ SET (CPACK_SOURCE_IGNORE_FILES
 
 # We copy some files to the binary archive
 INSTALL (TARGETS    ${PROJECT_NAME}                        DESTINATION bin)
-INSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/tests/data"      DESTINATION tests)
-INSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/tests/gold"      DESTINATION tests)
-INSTALL (FILES     tests/run-tests.sh tests/simple_test.sh DESTINATION tests)
-INSTALL (FILES     LICENSE README.md                       DESTINATION bin/..)
+INSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/tests/data"      DESTINATION .)
+#INSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/tests/gold"      DESTINATION tests)
+#INSTALL (FILES     tests/run-tests.sh tests/simple_test.sh DESTINATION tests)
+INSTALL (FILES     LICENSE README.md CHANGELOG.md          DESTINATION bin/..)
 
 # We include the "bin" tag into binary archive file name
 set (CPACK_PACKAGE_FILE_NAME  ${PROJECT_NAME}-${CPACK_PACKAGE_VERSION}-bin-${CMAKE_SYSTEM_NAME})
